@@ -1,0 +1,30 @@
+[project]
+name = "cerulean"
+version = "0.1.0"
+description = "Add your description here"
+authors = [{ name = "Anish Pallati", email = "anishp@duck.com" }]
+dependencies = ["discord.py>=2.3.2"]
+readme = "README.md"
+requires-python = ">= 3.12"
+
+[project.scripts]
+hello = "cerulean:hello"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = []
+
+# Python 3.12 wheel for multidict is not yet available on PyPI
+[[tool.rye.sources]]
+name = "AbstractUmbra"
+url = "https://abstractumbra.github.io/pip/"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cerulean"]
