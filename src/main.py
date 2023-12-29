@@ -106,7 +106,18 @@ class Confirm(discord.ui.View):
         await interaction.response.send_modal(modal)
         self.stop()
 
-    @discord.ui.button(label="Exit", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(label="Clear", style=discord.ButtonStyle.secondary)
+    async def clear(self, interaction: discord.Interaction, btn: discord.ui.Button):
+        self.history = get_prompt(interaction).lstrip("\n\n")
+        self.cleared = True
+
+        terminal = f"```bash\n{self.history}```"
+
+        await interaction.response.edit_message(
+            content=terminal, view=Confirm(history=self.history, cleared=self.cleared)
+        )
+
+    @discord.ui.button(label="Exit", style=discord.ButtonStyle.danger)
     async def interrupt(self, interaction: discord.Interaction, btn: discord.ui.Button):
         command = f"{get_prompt(interaction)}exit"
         terminal = f"```bash\n{self.history}{command}\nInterrupt signal received```"
