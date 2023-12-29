@@ -1,13 +1,13 @@
 import os
+import sys
 import discord
 import traceback
 
+from io import StringIO
+from builtin.map import prog_to_parser
+
 ALLOWED_GUILDS = [1189987436835643432, 1174113338343559269]
 GUILD_HOSTNAMES = ["testing", "cmu2028"]
-
-
-def parse_command(user: discord.User, command: str):
-    return "Default output"
 
 
 class Terminal(discord.ui.Modal, title="Terminal"):
@@ -28,7 +28,7 @@ class Terminal(discord.ui.Modal, title="Terminal"):
         command = self.input.value
 
         self.history += f"{user.display_name}@{self.hostname}:~$ {command}\n"
-        self.history += f"{parse_command(user, command)}\n"
+        self.history += f"{await parse_command(self, interaction)}\n"
 
         await interaction.response.edit_message(
             content=f"```bash\n{self.history}```",
@@ -39,7 +39,7 @@ class Terminal(discord.ui.Modal, title="Terminal"):
         info = traceback.format_exception(type(err), err, err.__traceback__)
         terminal = f"```bash\n{self.history}Something went wrong:\n\n{''.join(info)}```"
 
-        await interaction.response.edit_message(content=terminal, view=None)
+        await exit_command(terminal, interaction)
 
 
 class Confirm(discord.ui.View):
@@ -60,7 +60,7 @@ class Confirm(discord.ui.View):
     async def cancel(self, interaction: discord.Interaction, btn: discord.ui.Button):
         terminal = f"```bash\n{self.history}Interrupt signal received```"
 
-        await interaction.response.edit_message(content=terminal, view=None)
+        await exit_command(terminal, interaction)
         self.stop()
 
 
@@ -83,6 +83,38 @@ class Client(discord.Client):
                 )
         except ValueError:
             return
+
+
+async def parse_command(modal: Terminal, interaction: discord.Interaction):
+    command, *args = modal.input.value.split(' ')
+    parse = prog_to_parser.get(command)
+
+    if not parse:
+        return f"cmd not found: {command}"
+
+    out_buffer = StringIO()
+    sys.stdout = out_buffer
+
+    err_buffer = StringIO()
+    sys.stderr = err_buffer
+
+    try:
+        result = parse(args)
+    except SystemExit:
+        print(err_buffer.getvalue().rstrip("\n"))
+    finally:
+        output = out_buffer.getvalue()
+        out_buffer.close()
+        err_buffer.close()
+
+        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
+
+        return result if output == "" else output.rstrip("\n")
+
+
+async def exit_command(terminal: str, interaction: discord.Interaction):
+    await interaction.response.edit_message(content=terminal, view=None)
 
 
 client = Client(intents=discord.Intents.all())
