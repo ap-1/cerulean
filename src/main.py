@@ -56,8 +56,8 @@ class Confirm(discord.ui.View):
         await interaction.response.send_modal(modal)
         self.stop()
 
-    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary)
-    async def cancel(self, interaction: discord.Interaction, btn: discord.ui.Button):
+    @discord.ui.button(label="Exit", style=discord.ButtonStyle.secondary)
+    async def interrupt(self, interaction: discord.Interaction, btn: discord.ui.Button):
         terminal = f"```bash\n{self.history}Interrupt signal received```"
 
         await exit_command(terminal, interaction)
