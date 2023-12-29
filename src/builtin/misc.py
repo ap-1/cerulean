@@ -17,5 +17,5 @@ async def exit_terminal(
 async def clear_terminal(
     args: list[str], modal: "Terminal", interaction: discord.Interaction
 ):
-    modal.history = f"{interaction.user.display_name}@{modal.hostname}:~$ "
+    modal.history = modal.get_prompt(interaction).lstrip("\n\n")
     modal.cleared = True

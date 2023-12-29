@@ -6,19 +6,20 @@ import discord
 from discord import app_commands
 
 from io import StringIO
+from builtin.quote import quote_reaction_handler
 from map import prog_to_parser
 
 ALLOWED_GUILDS = [1189987436835643432]  # , 1174113338343559269]
 GUILD_HOSTNAMES = ["testing"]  # , "cmu2028"]
 
 
-def get_names(interaction: discord.Interaction):
+def get_prompt(interaction: discord.Interaction):
     idx = ALLOWED_GUILDS.index(interaction.guild_id)
 
     hostname = GUILD_HOSTNAMES[idx]
     username = interaction.user.display_name
 
-    return hostname, username
+    return f"\n\n{username}@{hostname}:~$ "
 
 
 class Terminal(discord.ui.Modal, title="Terminal"):
@@ -28,12 +29,15 @@ class Terminal(discord.ui.Modal, title="Terminal"):
         style=discord.TextStyle.short,
     )
 
-    def __init__(self, *args, history, hostname, cleared, **kwargs):
+    def __init__(self, *args, history, cleared, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.history = history
-        self.hostname = hostname
         self.cleared = cleared
+
+    # For access within command parsers
+    def get_prompt(self, interaction: discord.Interaction):
+        return get_prompt(interaction)
 
     async def run_command(
         self, parse, args: list[str], interaction: discord.Interaction
@@ -60,7 +64,7 @@ class Terminal(discord.ui.Modal, title="Terminal"):
 
     async def on_submit(self, interaction: discord.Interaction):
         if not self.cleared:
-            self.history += f"\n\n{interaction.user.display_name}@{self.hostname}:~$ "
+            self.history += get_prompt(interaction)
 
         self.history += f"{self.input.value}\n"
         self.cleared = False
@@ -77,7 +81,6 @@ class Terminal(discord.ui.Modal, title="Terminal"):
             content=f"```bash\n{self.history}```",
             view=Confirm(
                 history=self.history,
-                hostname=self.hostname,
                 cleared=self.cleared,
             ),
         )
@@ -90,28 +93,23 @@ class Terminal(discord.ui.Modal, title="Terminal"):
 
 
 class Confirm(discord.ui.View):
-    def __init__(self, *args, history="", hostname, cleared, **kwargs):
+    def __init__(self, *args, history="", cleared, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.history = history
-        self.hostname = hostname
         self.cleared = cleared
 
     @discord.ui.button(label="Open terminal", style=discord.ButtonStyle.primary)
     async def open(self, interaction: discord.Interaction, btn: discord.ui.Button):
-        modal = Terminal(
-            history=self.history, hostname=self.hostname, cleared=self.cleared
-        )
+        modal = Terminal(history=self.history, cleared=self.cleared)
 
         await interaction.response.send_modal(modal)
         self.stop()
 
     @discord.ui.button(label="Exit", style=discord.ButtonStyle.secondary)
     async def interrupt(self, interaction: discord.Interaction, btn: discord.ui.Button):
-        hostname, username = get_names(interaction)
-
-        command = f"\n{username}@{hostname}:~$ exit"
-        terminal = f"```bash\n{self.history}\n{command}\nInterrupt signal received```"
+        command = f"{get_prompt(interaction)}exit"
+        terminal = f"```bash\n{self.history}{command}\nInterrupt signal received```"
 
         await interaction.response.edit_message(content=terminal, view=None)
         self.stop()
@@ -139,17 +137,7 @@ class Client(discord.Client):
         ):
             return
 
-        channel = self.get_channel(payload.channel_id)
-        message = await channel.fetch_message(payload.message_id)
-
-        if message.author == self.user:
-            return
-
-        await message.reply(
-            mention_author=False,
-            content=f'"{message.content}" - {message.author.display_name}\nQuoted by {payload.member.display_name}',
-            allowed_mentions=discord.AllowedMentions.none(),
-        )
+        await quote_reaction_handler(self, payload)
 
 
 client = Client()
@@ -157,11 +145,10 @@ client = Client()
 
 @client.tree.command(guilds=client.allowed_guilds, description="Open the terminal")
 async def terminal(interaction: discord.Interaction):
-    hostname, username = get_names(interaction)
+    command = get_prompt(interaction)
 
     await interaction.response.send_message(
-        content=f"```bash\n{username}@{hostname}:~$ ```",
-        view=Confirm(hostname=hostname, cleared=False),
+        content=f"```bash{command}```", view=Confirm(cleared=False)
     )
 
 
