@@ -1,8 +1,12 @@
 import argparse
+import discord
+import typing
+
+if typing.TYPE_CHECKING:
+    from main import Terminal
 
 parser = argparse.ArgumentParser(
-    prog="query",
-    description="query a random quote from a specific user"
+    prog="quote", description="query a random quote from a specific user"
 )
 parser.add_argument(
     "-u",
@@ -13,7 +17,8 @@ parser.add_argument(
     type=int,
 )
 
-def parse(args: list[str]):
+
+async def parse(args: list[str], modal: "Terminal", interaction: discord.Interaction):
     result = parser.parse_args(args)
 
     return str(result)
