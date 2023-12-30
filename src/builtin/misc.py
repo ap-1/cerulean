@@ -8,7 +8,7 @@ if typing.TYPE_CHECKING:
 async def exit_terminal(
     args: list[str], modal: "Terminal", interaction: discord.Interaction
 ):
-    terminal = f"```bash\n{modal.history}Interrupt signal received```"
+    terminal = modal.terminal_wrap(f"{modal.history}Interrupt signal received")
 
     await interaction.response.edit_message(content=terminal, view=None)
     modal.stop()

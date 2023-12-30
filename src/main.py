@@ -6,7 +6,6 @@ import discord
 from discord import app_commands
 
 from io import StringIO
-from builtin.quote import quote_reaction_handler
 from map import prog_to_parser
 
 ALLOWED_GUILDS = [1189987436835643432]  # , 1174113338343559269]
@@ -22,6 +21,10 @@ def get_prompt(interaction: discord.Interaction):
     return f"\n\n{username}@{hostname}:~$ "
 
 
+def terminal_wrap(content: str):
+    return f"```bash\n{content}```"
+
+
 class Terminal(discord.ui.Modal, title="Terminal"):
     input = discord.ui.TextInput(
         label="Command",
@@ -34,10 +37,6 @@ class Terminal(discord.ui.Modal, title="Terminal"):
 
         self.history = history
         self.cleared = cleared
-
-    # For access within command parsers
-    def get_prompt(self, interaction: discord.Interaction):
-        return get_prompt(interaction)
 
     async def run_command(
         self, parse, args: list[str], interaction: discord.Interaction
@@ -87,9 +86,18 @@ class Terminal(discord.ui.Modal, title="Terminal"):
 
     async def on_error(self, interaction: discord.Interaction, err: Exception) -> None:
         info = traceback.format_exception(type(err), err, err.__traceback__)
-        terminal = f"```bash\n{self.history}Something went wrong:\n\n{''.join(info)}```"
+        terminal = terminal_wrap(
+            f"{self.history}Something went wrong:\n\n{''.join(info)}"
+        )
 
         await interaction.response.edit_message(content=terminal, view=None)
+
+    # Utility function access within command parsers
+    def get_prompt(self, interaction: discord.Interaction):
+        return get_prompt(interaction)
+
+    def terminal_wrap(self, content: str):
+        return terminal_wrap(content)
 
 
 class Confirm(discord.ui.View):
@@ -111,7 +119,7 @@ class Confirm(discord.ui.View):
         self.history = get_prompt(interaction).lstrip("\n\n")
         self.cleared = True
 
-        terminal = f"```bash\n{self.history}```"
+        terminal = terminal_wrap(self.history)
 
         await interaction.response.edit_message(
             content=terminal, view=Confirm(history=self.history, cleared=self.cleared)
@@ -120,7 +128,7 @@ class Confirm(discord.ui.View):
     @discord.ui.button(label="Exit", style=discord.ButtonStyle.danger)
     async def interrupt(self, interaction: discord.Interaction, btn: discord.ui.Button):
         command = f"{get_prompt(interaction)}exit"
-        terminal = f"```bash\n{self.history}{command}\nInterrupt signal received```"
+        terminal = terminal_wrap(f"{self.history}{command}\nInterrupt signal received")
 
         await interaction.response.edit_message(content=terminal, view=None)
         self.stop()
@@ -141,25 +149,17 @@ class Client(discord.Client):
         for guild in self.allowed_guilds:
             await self.tree.sync(guild=guild)
 
-    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
-        if (
-            payload.guild_id not in ALLOWED_GUILDS
-            or payload.event_type != "REACTION_ADD"
-        ):
-            return
-
-        await quote_reaction_handler(self, payload)
-
 
 client = Client()
 
 
 @client.tree.command(guilds=client.allowed_guilds, description="Open the terminal")
 async def terminal(interaction: discord.Interaction):
-    command = get_prompt(interaction)
+    command = get_prompt(interaction).lstrip("\n")
+    terminal = terminal_wrap(command)
 
     await interaction.response.send_message(
-        content=f"```bash{command}```", view=Confirm(cleared=False)
+        content=terminal, view=Confirm(cleared=False)
     )
 
 
