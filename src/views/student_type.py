@@ -16,7 +16,7 @@ class NameModal(discord.ui.Modal, title="Verification"):
     @override
     async def on_submit(self, interaction: discord.Interaction):
         await interaction.response.send_message(
-            content="Are you an prospective student (starting Fall '25), a current student, or an alum?",
+            content="Are you a prospective student (starting Fall '25), a current student (already at CMU), or an alum?",
             view=StudentTypeView(self.name.value),
             ephemeral=True,
         )
@@ -58,6 +58,7 @@ class StudentTypeDropdown(discord.ui.Select[discord.ui.View]):
             view=AcceptanceModal(self.name, self.selected_roles),
         )
 
+
 class ProgramDropdown(discord.ui.Select[discord.ui.View]):
     def __init__(self, name: str, selected_roles: list[Role]):
         self.name: str = name
@@ -92,6 +93,7 @@ class ProgramDropdown(discord.ui.Select[discord.ui.View]):
             content="Have you been accepted?",
             view=AcceptanceModal(self.name),
         )
+
 
 class StudentTypeView(discord.ui.View):
     def __init__(self, name: str):
