@@ -10,7 +10,7 @@ class Leave(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot: commands.Bot = bot
 
-    @commands.Cog.listener(name="on_member_remove")
+    @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
         if member.guild.id != Meta.SERVER.value:
             return
