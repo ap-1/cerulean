@@ -59,42 +59,6 @@ class StudentTypeDropdown(discord.ui.Select[discord.ui.View]):
         )
 
 
-class ProgramDropdown(discord.ui.Select[discord.ui.View]):
-    def __init__(self, name: str, selected_roles: list[Role]):
-        self.name: str = name
-        self.selected_roles: list[Role] = selected_roles
-
-        options = [
-            discord.SelectOption(label="Undergraduate", value="UNDERGRADUATE"),
-            discord.SelectOption(label="Graduate", value="GRAD_STUDENT"),
-        ]
-
-        super().__init__(
-            placeholder="Select the type of program you are in",
-            min_values=1,
-            max_values=1,
-            options=options,
-        )
-
-    @override
-    async def callback(self, interaction: discord.Interaction):
-        value = self.values[0]
-        program_type = Role[value]
-
-        if program_type != Role.GRAD_STUDENT:
-            self.selected_roles.append(program_type)
-
-            return await interaction.response.edit_message(
-                content="What school are you in?",
-                view=SchoolView(self.name, self.selected_roles),
-            )
-
-        await interaction.response.edit_message(
-            content="Have you been accepted?",
-            view=AcceptanceModal(self.name),
-        )
-
-
 class StudentTypeView(discord.ui.View):
     def __init__(self, name: str):
         super().__init__()
