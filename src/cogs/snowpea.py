@@ -1,4 +1,4 @@
-from typing import cast
+from typing import cast, override
 
 import discord
 from discord import app_commands
@@ -23,10 +23,17 @@ class Snowpea(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot: commands.Bot = bot
 
-    @app_commands.context_menu()  # pyright: ignore[reportArgumentType]
-    @app_commands.guilds(Meta.SERVER.value)
-    @app_commands.check(not_current_student_channel)
-    async def snowpea(self, interaction: discord.Interaction, message: discord.Message):
+        self.snowpea_context: app_commands.ContextMenu = app_commands.ContextMenu(
+            name="snowpea",
+            callback=self.snowpea_callback,
+            guild_ids=[Meta.SERVER.value],
+        )
+        self.snowpea_context.add_check(not_current_student_channel)
+        self.bot.tree.add_command(self.snowpea_context)
+
+    async def snowpea_callback(
+        self, interaction: discord.Interaction, message: discord.Message
+    ):
         guild = cast(discord.Guild, self.bot.get_guild(Meta.SERVER.value))
         channel = cast(
             discord.TextChannel, guild.get_channel(Meta.CURRENT_STUDENT_CHANNEL.value)
@@ -101,6 +108,12 @@ class Snowpea(commands.Cog):
 
         await current_student_channel.send(
             f"{member.mention} please resume your conversation here"
+        )
+
+    @override
+    async def cog_unload(self):
+        self.bot.tree.remove_command(
+            self.snowpea_context.name, type=self.snowpea_context.type
         )
 
 
