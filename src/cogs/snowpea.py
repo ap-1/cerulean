@@ -23,7 +23,7 @@ class Snowpea(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot: commands.Bot = bot
 
-    @app_commands.context_menu()
+    @app_commands.context_menu()  # pyright: ignore[reportArgumentType]
     @app_commands.guilds(Meta.SERVER.value)
     @app_commands.check(not_current_student_channel)
     async def snowpea(self, interaction: discord.Interaction, message: discord.Message):
