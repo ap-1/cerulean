@@ -1,4 +1,9 @@
 {
+    "python.pythonPath": "./.venv/bin/python",
+    "basedpyright.analysis.diagnosticSeverityOverrides": {
+        "reportAny": "none",
+        "reportUnusedCallResult": "none"
+    },
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "charliermarsh.ruff",
     "editor.codeActionsOnSave": {
