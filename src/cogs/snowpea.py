@@ -1,7 +1,7 @@
 from typing import cast, override
 
 import discord
-from discord import app_commands
+from discord import PartialEmoji, app_commands
 from discord.ext import commands
 
 from utils.ids import Meta, Role
@@ -55,7 +55,7 @@ class Snowpea(commands.Cog):
 
         # ignore if anyone has already reacted to this message
         if any(
-            reaction.me
+            reaction.count > 1
             and isinstance(reaction.emoji, discord.PartialEmoji)
             and reaction.emoji.id == Meta.SNOWPEA.value
             for reaction in message.reactions
@@ -114,9 +114,9 @@ class Snowpea(commands.Cog):
         if channel.id == Meta.CURRENT_STUDENT_CHANNEL.value:
             return await remove_reaction()
 
-        # ignore if the bot has already reacted to this message
+        # ignore if anyone has already reacted to this message
         if any(
-            reaction.me
+            reaction.count > 1
             and isinstance(reaction.emoji, discord.PartialEmoji)
             and reaction.emoji.id == Meta.SNOWPEA.value
             for reaction in message.reactions
@@ -129,7 +129,9 @@ class Snowpea(commands.Cog):
             return await remove_reaction()
 
         # replace reaction with own reaction
-        await remove_reaction()
+        await message.clear_reaction(
+            emoji=PartialEmoji(name="snowpea", id=Meta.SNOWPEA.value)
+        )
         await message.add_reaction(
             discord.PartialEmoji(name="snowpea", id=Meta.SNOWPEA.value)
         )
