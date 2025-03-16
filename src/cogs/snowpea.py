@@ -53,6 +53,17 @@ class Snowpea(commands.Cog):
                     "user is not in the server", ephemeral=True
                 )
 
+        # ignore if anyone has already reacted to this message
+        if any(
+            reaction.me
+            and isinstance(reaction.emoji, discord.PartialEmoji)
+            and reaction.emoji.id == Meta.SNOWPEA.value
+            for reaction in message.reactions
+        ):
+            return await interaction.response.send_message(
+                "someone has already snowpea'd this message", ephemeral=True
+            )
+
         # decline if member is a prospective student
         if any(role.id == Role.PROSPECTIVE_STUDENT.value for role in member.roles):
             return await interaction.response.send_message(
@@ -85,27 +96,41 @@ class Snowpea(commands.Cog):
         if not payload.guild_id or payload.guild_id != Meta.SERVER.value:
             return
 
+        # decline if reaction is in the current student channel
         guild = cast(discord.Guild, self.bot.get_guild(payload.guild_id))
         channel = cast(discord.TextChannel, guild.get_channel(payload.channel_id))
 
-        # decline if reaction is in the current student channel
         if channel.id == Meta.CURRENT_STUDENT_CHANNEL.value:
             return await channel.send(
                 f"{payload.member.mention} why would you snowpea in the current student channel"
             )
 
-        current_student_channel = cast(
-            discord.TextChannel, guild.get_channel(Meta.CURRENT_STUDENT_CHANNEL.value)
-        )
+        # ignore if the bot has already reacted to this message
         message = await channel.fetch_message(payload.message_id)
-        member = cast(discord.Member, message.author)
+        if any(
+            reaction.me
+            and isinstance(reaction.emoji, discord.PartialEmoji)
+            and reaction.emoji.id == Meta.SNOWPEA.value
+            for reaction in message.reactions
+        ):
+            return
 
         # decline if member is a prospective student
+        member = cast(discord.Member, message.author)
         if any(role.id == Role.PROSPECTIVE_STUDENT.value for role in member.roles):
             return await channel.send(
                 f"{payload.member.mention} why would you snowpea a prospective student"
             )
 
+        # replace reaction with own reaction
+        await message.clear_reaction(payload.emoji)
+        await message.add_reaction(
+            discord.PartialEmoji(name="snowpea", id=Meta.SNOWPEA.value)
+        )
+
+        current_student_channel = cast(
+            discord.TextChannel, guild.get_channel(Meta.CURRENT_STUDENT_CHANNEL.value)
+        )
         await current_student_channel.send(
             f"{member.mention} please resume your conversation here"
         )
