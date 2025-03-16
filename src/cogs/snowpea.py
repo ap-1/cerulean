@@ -44,10 +44,10 @@ class Snowpea(commands.Cog):
                 "message has no author", ephemeral=True
             )
 
-        member = message.author
-        if isinstance(member, discord.User):
+        author = message.author
+        if isinstance(author, discord.User):
             try:
-                member = await guild.fetch_member(member.id)
+                author = await guild.fetch_member(author.id)
             except discord.NotFound:
                 return await interaction.response.send_message(
                     "user is not in the server", ephemeral=True
@@ -65,9 +65,9 @@ class Snowpea(commands.Cog):
             )
 
         # decline if member is a prospective student
-        if any(role.id == Role.PROSPECTIVE_STUDENT.value for role in member.roles):
+        if any(role.id == Role.PROSPECTIVE_STUDENT.value for role in author.roles):
             return await interaction.response.send_message(
-                "why would you snowpea a prospective student",
+                "user is a prospective student",
                 ephemeral=True,
             )
 
@@ -75,7 +75,9 @@ class Snowpea(commands.Cog):
             discord.PartialEmoji(name="snowpea", id=Meta.SNOWPEA.value)
         )
 
-        await channel.send(f"{member.mention} please resume your conversation here")
+        await channel.send(
+            f"{author.mention} please resume your conversation {message.jump_url} here"
+        )
         await interaction.response.send_message("done!", ephemeral=True)
 
     @commands.Cog.listener()
@@ -96,34 +98,38 @@ class Snowpea(commands.Cog):
         if not payload.guild_id or payload.guild_id != Meta.SERVER.value:
             return
 
+        member = payload.member
+
+        def remove_reaction():
+            return message.remove_reaction(
+                discord.PartialEmoji(name="snowpea", id=Meta.SNOWPEA.value),
+                member,
+            )
+
         # decline if reaction is in the current student channel
         guild = cast(discord.Guild, self.bot.get_guild(payload.guild_id))
         channel = cast(discord.TextChannel, guild.get_channel(payload.channel_id))
+        message = await channel.fetch_message(payload.message_id)
 
         if channel.id == Meta.CURRENT_STUDENT_CHANNEL.value:
-            return await channel.send(
-                f"{payload.member.mention} why would you snowpea in the current student channel"
-            )
+            return await remove_reaction()
 
         # ignore if the bot has already reacted to this message
-        message = await channel.fetch_message(payload.message_id)
         if any(
             reaction.me
             and isinstance(reaction.emoji, discord.PartialEmoji)
             and reaction.emoji.id == Meta.SNOWPEA.value
             for reaction in message.reactions
         ):
-            return
+            return await remove_reaction()
 
-        # decline if member is a prospective student
-        member = cast(discord.Member, message.author)
-        if any(role.id == Role.PROSPECTIVE_STUDENT.value for role in member.roles):
-            return await channel.send(
-                f"{payload.member.mention} why would you snowpea a prospective student"
-            )
+        # decline if author is a prospective student
+        author = cast(discord.Member, message.author)
+        if any(role.id == Role.PROSPECTIVE_STUDENT.value for role in author.roles):
+            return await remove_reaction()
 
         # replace reaction with own reaction
-        await message.clear_reaction(payload.emoji)
+        await remove_reaction()
         await message.add_reaction(
             discord.PartialEmoji(name="snowpea", id=Meta.SNOWPEA.value)
         )
@@ -132,7 +138,7 @@ class Snowpea(commands.Cog):
             discord.TextChannel, guild.get_channel(Meta.CURRENT_STUDENT_CHANNEL.value)
         )
         await current_student_channel.send(
-            f"{member.mention} please resume your conversation here"
+            f"{author.mention} please resume your conversation {message.jump_url} here"
         )
 
     @override
