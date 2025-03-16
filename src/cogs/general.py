@@ -1,13 +1,30 @@
+import io
 import re
+import sys
 import textwrap
 import traceback
 import typing
+from typing import override
 
 import discord
 from discord import app_commands
 from discord.ext import commands
 
 from utils.ids import Meta
+
+
+class RedirectToCtx(io.StringIO):
+    def __init__(self, ctx: commands.Context[commands.Bot]):
+        super().__init__()
+        self.ctx: commands.Context[commands.Bot] = ctx
+        self.output: list[str] = []
+
+    @override
+    def write(self, message: str):
+        if message.strip():
+            self.output.append(message)
+
+        return len(message)
 
 
 class General(commands.Cog):
@@ -31,30 +48,40 @@ class General(commands.Cog):
             "commands": commands,
         }
 
+        original_stdout = sys.stdout
+        stdout_output = ""
+        sys.stdout = RedirectToCtx(ctx)
+
         code = re.sub(r"```(?:py|python)?\n([\s\S]+?)\n```", r"\1", code)
         code = re.sub(r"^`([^`]+)`$", r"\1", code)
+        lines = code.splitlines()
 
         try:
+            body = textwrap.indent("\n".join(lines[:-1]), "    ")
             code = textwrap.dedent(
-                f"async def __eval():\n{textwrap.indent(code, '    ')}\n    return {code}"
+                f"async def __eval():\n{body}\n    return {lines[-1]}"
             )
 
             exec(compile(code, "<eval>", "exec"), env)
             result = await env["__eval"]()
 
-            embed = discord.Embed(
-                description=f"```py\n{result}\n```",
-                color=discord.Color.green(),
-            )
-
+            embed = discord.Embed(color=discord.Color.green())
+            embed.add_field(name="result", value=f"```py\n{result}\n```", inline=False)
         except Exception as e:
             error = "".join(traceback.format_exception(type(e), e, e.__traceback__))
-            embed = discord.Embed(
-                description=f"```py\n{error}\n```",
-                color=discord.Color.red(),
+
+            embed = discord.Embed(color=discord.Color.red())
+            embed.add_field(name="error", value=f"```py\n{error}\n```", inline=False)
+        finally:
+            stdout_output = "\n".join(sys.stdout.output)
+            sys.stdout = original_stdout
+
+        if stdout_output:
+            embed.add_field(
+                name="stdout", value=f"```py\n{stdout_output}\n```", inline=False
             )
 
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed)
 
 
 async def setup(bot: commands.Bot) -> None:
