@@ -13,7 +13,7 @@ from discord.ext import commands
 from utils.ids import Meta
 
 
-class RedirectToCtx(io.StringIO):
+class RedirectToEmbed(io.StringIO):
     def __init__(self, ctx: commands.Context[commands.Bot]):
         super().__init__()
         self.ctx: commands.Context[commands.Bot] = ctx
@@ -50,7 +50,7 @@ class General(commands.Cog):
 
         original_stdout = sys.stdout
         stdout_output = ""
-        sys.stdout = RedirectToCtx(ctx)
+        sys.stdout = RedirectToEmbed(ctx)
 
         code = re.sub(r"```(?:py|python)?\n([\s\S]+?)\n```", r"\1", code)
         code = re.sub(r"^`([^`]+)`$", r"\1", code)
