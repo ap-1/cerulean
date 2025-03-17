@@ -64,8 +64,10 @@ class Snowpea(commands.Cog):
                 "someone has already snowpea'd this message", ephemeral=True
             )
 
-        # decline if member is a prospective student
-        if any(role.id == Role.PROSPECTIVE_STUDENT.value for role in author.roles):
+        # decline if author is a prospective student or a bot
+        if author.bot or any(
+            role.id == Role.PROSPECTIVE_STUDENT.value for role in author.roles
+        ):
             return await interaction.response.send_message(
                 "user is a prospective student",
                 ephemeral=True,
@@ -123,9 +125,11 @@ class Snowpea(commands.Cog):
         ):
             return await remove_reaction()
 
-        # decline if author is a prospective student
+        # decline if author is a prospective student or a bot
         author = cast(discord.Member, message.author)
-        if any(role.id == Role.PROSPECTIVE_STUDENT.value for role in author.roles):
+        if author.bot or any(
+            role.id == Role.PROSPECTIVE_STUDENT.value for role in author.roles
+        ):
             return await remove_reaction()
 
         # replace reaction with own reaction
