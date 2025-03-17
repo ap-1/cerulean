@@ -9,6 +9,7 @@ from discord.ext import commands
 from utils.ids import Meta, Role
 from utils.tag_database import TagDatabase
 from utils.tag_models import TagData
+from utils.tag_utils import fuzzy_search
 
 
 def is_mod_or_admin(interaction: discord.Interaction) -> bool:
@@ -140,39 +141,62 @@ class Tags(commands.Cog):
         name = name.lower()
 
         if name in self.tags:
+            # found exact match
             tag = self.tags[name]
-            author_name = tag.author_name
-
-            tag.uses += 1
-            try:
-                await self.db.update_tag(tag)
-            except Exception as e:
-                print(f"Error updating tag usage count: {e}")
-
-            try:
-                guild = ctx.guild
-                if guild:
-                    # try to fetch the member by ID and update to their current name
-                    member = guild.get_member(tag.author_id)
-                    if member:
-                        author_name = member.display_name
-            except Exception:
-                # default to stored name
-                pass
-
-            embed = discord.Embed(
-                title=name,
-                description=tag.content,
-                color=discord.Color.gold() if tag.starred else discord.Color.blue(),
-                timestamp=tag.created_at,
-            )
-            embed.set_footer(
-                text=f"Created by {author_name} • Used {tag.uses} time{'s' if tag.uses != 1 else ''}"
-            )
-
-            await ctx.reply(embed=embed)
+            await self._display_tag(ctx, tag)
         else:
-            await ctx.reply(f"tag '{name}' not found", ephemeral=True)
+            search_results = fuzzy_search(name, self.tags, threshold=0.6)
+
+            if not search_results:
+                # no similar tags found
+                await ctx.reply(f"Tag '{name}' not found.", ephemeral=True)
+            elif len(search_results) == 1 and search_results[0][1] > 0.8:
+                # single high-confidence match, display it directly
+                result_name = search_results[0][0]
+                tag = self.tags[result_name]
+
+                await self._display_tag(ctx, tag)
+            else:
+                # multiple possible matches, suggest the top 5
+                suggestions = ", ".join(
+                    f"`{result[0]}`" for result in search_results[:5]
+                )
+                await ctx.reply(
+                    f"Tag '{name}' not found. Did you mean one of these?\n{suggestions}",
+                    ephemeral=True,
+                )
+
+    async def _display_tag(
+        self, ctx: commands.Context[commands.Bot], tag: TagData
+    ) -> None:
+        tag.uses += 1
+        try:
+            await self.db.update_tag(tag)
+        except Exception as e:
+            print(f"Error updating tag usage count: {e}")
+
+        author_name = tag.author_name
+        try:
+            guild = ctx.guild
+            if guild:
+                # try to fetch the member by ID and update to their current name
+                member = guild.get_member(tag.author_id)
+                if member:
+                    author_name = member.display_name
+        except Exception:
+            # default to stored name
+            pass
+
+        embed = discord.Embed(
+            title=f"{'⭐ ' if tag.starred else ''}{tag.name}",
+            description=tag.content,
+            color=discord.Color.gold() if tag.starred else discord.Color.blue(),
+            timestamp=tag.created_at,
+        )
+        embed.set_footer(
+            text=f"Created by {author_name} • Used {tag.uses} time{'s' if tag.uses != 1 else ''}"
+        )
+        await ctx.reply(embed=embed)
 
     @commands.hybrid_group(name="tags", description="Manage tags.")
     @app_commands.guilds(Meta.SERVER.value)
@@ -209,9 +233,6 @@ class Tags(commands.Cog):
                 inline=False,
             )
 
-        if not starred and not normal:
-            embed.description = "No tags available."
-
         star_count = len(starred)
         footer_text = f"Total tags: {len(tag_names)}"
 
@@ -220,6 +241,63 @@ class Tags(commands.Cog):
 
         embed.set_footer(text=footer_text)
         await ctx.reply(embed=embed, ephemeral=True)
+
+    @tags_group.command(
+        name="search", description="Search for tags that match a query."
+    )
+    @app_commands.describe(query="The search term")
+    async def tags_search(
+        self, ctx: commands.Context[commands.Bot], query: str
+    ) -> None:
+        await self.wait_until_ready()
+
+        if not self.tags:
+            await ctx.reply("no tags have been created yet", ephemeral=True)
+            return
+
+        # fuzzy search with lower threshold for search command
+        search_results = fuzzy_search(query, self.tags, threshold=0.4)
+
+        if not search_results:
+            await ctx.reply(f"no tags found matching '{query}'.", ephemeral=True)
+            return
+
+        embed = discord.Embed(
+            title=f"Search results for '{query}'", color=discord.Color.blue()
+        )
+
+        # group results by similarity
+        high_matches: list[str] = []
+        medium_matches: list[str] = []
+        low_matches: list[str] = []
+
+        for name, score in search_results:
+            display_name = f"⭐ {name}" if self.tags[name].starred else name
+
+            if score > 0.75:
+                high_matches.append(f"`{display_name}`")
+            elif score > 0.6:
+                medium_matches.append(f"`{display_name}`")
+            else:
+                low_matches.append(f"`{display_name}`")
+
+        if high_matches:
+            embed.add_field(
+                name="Strong Matches", value=", ".join(high_matches), inline=False
+            )
+
+        if medium_matches:
+            embed.add_field(
+                name="Medium Matches", value=", ".join(medium_matches), inline=False
+            )
+
+        if low_matches:
+            embed.add_field(
+                name="Weak Matches", value=", ".join(low_matches), inline=False
+            )
+
+        embed.set_footer(text=f"Found {len(search_results)} matching tags")
+        await ctx.reply(embed=embed)
 
     @tags_group.command(
         name="star",
