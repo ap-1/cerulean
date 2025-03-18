@@ -64,6 +64,13 @@ class TagNameModal(discord.ui.Modal, title="Create Tag"):
             )
             return
 
+        # check if the command was used in the server
+        if not self.message.guild or self.message.guild.id != Meta.SERVER.value:
+            await interaction.response.send_message(
+                "this command can only be used in a server", ephemeral=True
+            )
+            return
+
         # create the new tag
         author = self.message.author
         author_name = (
@@ -76,12 +83,15 @@ class TagNameModal(discord.ui.Modal, title="Create Tag"):
             author_id=author.id,
             author_name=author_name,
             created_at=datetime.datetime.now(),
+            message_id=self.message.id,
+            channel_id=self.message.channel.id,
         )
 
         try:
             # add tag to database and memory
             await self.cog.db.add_tag(tag)
             self.cog.tags[tag_name] = tag
+
             await interaction.response.send_message(
                 f"tag '{tag_name}' has been created successfully", ephemeral=True
             )
@@ -109,6 +119,7 @@ class Tags(commands.Cog):
 
         # schedule the loading of tags
         self.bot.loop.create_task(self.load_tags())
+        self.bot.loop.create_task(self.check_for_tag_updates())
 
     async def load_tags(self) -> None:
         try:
@@ -132,6 +143,55 @@ class Tags(commands.Cog):
         # create a modal to get the tag name
         modal = TagNameModal(cog=self, message=message)
         await interaction.response.send_modal(modal)
+
+    async def check_for_tag_updates(self) -> None:
+        await self.bot.wait_until_ready()
+        await self.wait_until_ready()
+
+        while not self.bot.is_closed():
+            try:
+                for tag_name, tag in self.tags.items():
+                    # skip tags without message info
+                    if not tag.message_id or not tag.channel_id:
+                        continue
+
+                    # try to fetch the message
+                    try:
+                        guild = self.bot.get_guild(Meta.SERVER.value)
+                        if not guild:
+                            continue
+
+                        channel = guild.get_channel(tag.channel_id)
+                        if not channel or not isinstance(channel, discord.TextChannel):
+                            continue
+
+                        message = await channel.fetch_message(tag.message_id)
+                        if message.content != tag.content:
+                            # content has changed, update the tag
+                            tag.content = message.content
+                            await self.db.update_tag(tag)
+
+                            print(
+                                f"Updated content for tag '{tag_name}' from source message"
+                            )
+                    except discord.NotFound:
+                        # message was deleted
+                        print(f"Source message for tag '{tag_name}' no longer exists")
+                        continue
+                    except discord.Forbidden:
+                        # no permissions to access the channel/message
+                        print(
+                            f"No permission to access source message for tag '{tag_name}'"
+                        )
+                        continue
+                    except Exception as e:
+                        print(f"Error checking tag '{tag_name}' for updates: {e}")
+                        continue
+            except Exception as e:
+                print(f"Error in tag update checker: {e}")
+
+            # run every hour
+            await asyncio.sleep(3600)
 
     @commands.hybrid_command(name="tag", description="Display a saved tag.")
     @app_commands.guilds(Meta.SERVER.value)
@@ -193,8 +253,13 @@ class Tags(commands.Cog):
             color=discord.Color.gold() if tag.starred else discord.Color.blue(),
             timestamp=tag.created_at,
         )
+
+        # add source message link if available
+        if tag.message_link:
+            embed.add_field(name="Source", value=tag.message_link, inline=False)
+
         embed.set_footer(
-            text=f"Created by {author_name} • Used {tag.uses} time{'s' if tag.uses != 1 else ''}"
+            text=f"Written by {author_name} • Used {tag.uses} time{'s' if tag.uses != 1 else ''}"
         )
         await ctx.reply(embed=embed)
 
