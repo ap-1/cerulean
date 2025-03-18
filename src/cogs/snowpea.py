@@ -38,7 +38,7 @@ class Snowpea(commands.Cog):
 
         embed = discord.Embed(
             title=f"Stats for {target_user.display_name}",
-            color=discord.Color.green(),
+            color=discord.Color.blue(),
         )
 
         embed.add_field(
