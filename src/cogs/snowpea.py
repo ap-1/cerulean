@@ -1,7 +1,7 @@
 from typing import cast, override
 
 import discord
-from discord import PartialEmoji
+from discord import PartialEmoji, app_commands
 from discord.ext import commands
 
 from utils.ids import Meta, Role
@@ -16,6 +16,7 @@ class Snowpea(commands.Cog):
         self.bot.loop.create_task(self.tracker.connect())
 
     @commands.hybrid_group(name="snowpea", description="Snowpea related commands")
+    @app_commands.guilds(Meta.SERVER.value)
     @commands.guild_only()
     async def snowpea_group(self, ctx: commands.Context[commands.Bot]) -> None:
         if ctx.invoked_subcommand is None:
