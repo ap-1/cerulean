@@ -105,11 +105,9 @@ class Snowpea(commands.Cog):
             await ctx.reply("no statistics available yet", ephemeral=True)
             return
 
-        category_display = (
-            "Snowpea'd" if category.lower() == "received" else "Snowpea'd Others"
-        )
         embed = discord.Embed(
-            title=f"{category_display} Leaderboard", color=discord.Color.blue()
+            title="Wall of Shame" if category.lower() == "received" else "Wall of Fame",
+            color=discord.Color.blue(),
         )
 
         # add fields for each user
