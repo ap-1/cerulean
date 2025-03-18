@@ -79,8 +79,11 @@ class Snowpea(commands.Cog):
 
         stats: list[tuple[discord.Member, int]] = []
         async for member in guild.fetch_members(limit=None):
-            # don't allow prospective students or bots
-            if member.bot or any(
+            if member.bot:
+                continue
+
+            # prospective students can only initiate snowpeas
+            if category.lower() == "received" and any(
                 role.id == Role.PROSPECTIVE_STUDENT.value for role in member.roles
             ):
                 continue
