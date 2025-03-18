@@ -11,13 +11,13 @@ class SnowpeaTracker(RedisManager):
 
     async def is_message_processed(self, message_id: int) -> bool:
         try:
-            return await self.sismember(str(message_id))
+            return await self.sismember("", str(message_id))
         except Exception:
             # assume not processed if Redis error occurs
             return False
 
     async def mark_message_processed(self, message_id: int) -> None:
-        await self.sadd(str(message_id))
+        await self.sadd("", str(message_id))
 
     async def set_author_cooldown(self, author_id: int) -> None:
         cooldown_key = f"cooldown:{author_id}"
@@ -51,6 +51,8 @@ class SnowpeaTracker(RedisManager):
 
         # update the count
         await self.set(key, str(count))
+        await self.sadd("received_users", str(user_id))
+
         return count
 
     async def increment_initiated_count(self, user_id: int) -> int:
@@ -66,6 +68,8 @@ class SnowpeaTracker(RedisManager):
 
         # update the count
         await self.set(key, str(count))
+        await self.sadd("initiated_users", str(user_id))
+
         return count
 
     async def get_received_count(self, user_id: int) -> int:
@@ -89,3 +93,11 @@ class SnowpeaTracker(RedisManager):
             except ValueError:
                 return 0
         return 0
+
+    async def get_users_with_stats(self, stat_type: str) -> set[str]:
+        if stat_type.lower() == "received":
+            return await self.smembers("received_users")
+        elif stat_type.lower() == "initiated":
+            return await self.smembers("initiated_users")
+
+        return set()

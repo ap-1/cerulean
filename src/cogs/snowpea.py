@@ -3,6 +3,7 @@ from typing import cast, override
 import discord
 from discord import PartialEmoji, app_commands
 from discord.ext import commands
+from discord.member import Member
 
 from utils.ids import Meta, Role
 from utils.tracker import SnowpeaTracker
@@ -43,25 +44,40 @@ class Snowpea(commands.Cog):
         embed.add_field(
             name="Snowpea'd (Received)",
             value=f"{received_count} time{'s' if received_count != 1 else ''}",
-            inline=True,
+            inline=False,
         )
 
         embed.add_field(
             name="Snowpea'd Others (Initiated)",
             value=f"{initiated_count} time{'s' if initiated_count != 1 else ''}",
-            inline=True,
+            inline=False,
         )
 
-        embed.set_thumbnail(url=target_user.display_avatar.url)
         await ctx.reply(embed=embed)
 
     @snowpea_group.command(
         name="leaderboard", description="Show snowpea statistics leaderboard"
     )
+    @app_commands.describe(
+        category="The type of leaderboard to show (initated or received)"
+    )
+    @app_commands.choices(
+        category=[
+            app_commands.Choice(name="Received (been snowpea'd)", value="received"),
+            app_commands.Choice(name="Initiated (snowpea'd others)", value="initiated"),
+        ]
+    )
     @commands.guild_only()
     async def snowpea_leaderboard(
-        self, ctx: commands.Context[commands.Bot], category: str = "received"
+        self,
+        ctx: commands.Context[commands.Bot],
+        category: app_commands.Choice[str] | str,
     ) -> None:
+        await ctx.defer()
+
+        if isinstance(category, app_commands.Choice):
+            category = category.value
+
         # validate category
         if category.lower() not in ["received", "initiated"]:
             await ctx.reply(
@@ -70,7 +86,13 @@ class Snowpea(commands.Cog):
             )
             return
 
-        # iterate through guild members and get their stats
+        user_ids = await self.tracker.get_users_with_stats(category)
+
+        if not user_ids:
+            await ctx.reply("no statistics available yet", ephemeral=True)
+            return
+
+        stats: list[tuple[Member, int]] = []
         guild = ctx.guild
         if not guild or not guild.id == Meta.SERVER.value:
             await ctx.reply(
@@ -78,30 +100,31 @@ class Snowpea(commands.Cog):
             )
             return
 
-        stats: list[tuple[discord.Member, int]] = []
-        async for member in guild.fetch_members(limit=None):
-            if member.bot:
+        # iterate through these user IDs and get their stats
+        for user_id_str in user_ids:
+            try:
+                user_id = int(user_id_str)
+                member = guild.get_member(user_id)
+                if not member:
+                    # skip users not in the guild
+                    continue
+
+                if category.lower() == "received":
+                    count = await self.tracker.get_received_count(member.id)
+                else:  # initiated
+                    count = await self.tracker.get_initiated_count(member.id)
+
+                if count > 0:
+                    # only include users with non-zero counts
+                    stats.append((member, count))
+            except (ValueError, TypeError):
+                # skip invalid user IDs
                 continue
-
-            # prospective students can only initiate snowpeas
-            if category.lower() == "received" and any(
-                role.id == Role.PROSPECTIVE_STUDENT.value for role in member.roles
-            ):
-                continue
-
-            if category.lower() == "received":
-                count = await self.tracker.get_received_count(member.id)
-            else:  # initiated
-                count = await self.tracker.get_initiated_count(member.id)
-
-            if count > 0:
-                # only include users with non-zero counts
-                stats.append((member, count))
 
         # sort by count in descending order
         stats.sort(key=lambda x: x[1], reverse=True)
 
-        top_users = stats[:10]
+        top_users: list[tuple[Member, int]] = stats[:10]
         if not top_users:
             await ctx.reply("no statistics available yet", ephemeral=True)
             return

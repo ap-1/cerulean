@@ -25,6 +25,9 @@ class RedisManager:
     def get_key(self, key: str) -> str:
         return f"{self.key_prefix}:{key}"
 
+    def get_set_key(self, key: str) -> str:
+        return f"{self.set_key}:{key}"
+
     async def connect(self) -> None:
         try:
             self.redis = redis.from_url(self.redis_url, decode_responses=True)
@@ -74,27 +77,31 @@ class RedisManager:
         return bool(result)
 
     # set operations
-    async def sadd(self, value: str) -> int:
+    async def sadd(self, key: str, value: str) -> int:
         if not self.redis:
             raise redis.ConnectionError("Redis client not initialized")
 
-        return await cast(Awaitable[int], self.redis.sadd(self.set_key, value))
+        prefixed_key = self.get_set_key(key)
+        return await cast(Awaitable[int], self.redis.sadd(prefixed_key, value))
 
-    async def sismember(self, value: str) -> bool:
+    async def sismember(self, key: str, value: str) -> bool:
         if not self.redis:
             raise redis.ConnectionError("Redis client not initialized")
 
-        result = await cast(Awaitable[int], self.redis.sismember(self.set_key, value))
+        prefixed_key = self.get_set_key(key)
+        result = await cast(Awaitable[int], self.redis.sismember(prefixed_key, value))
         return bool(result)
 
-    async def smembers(self) -> Set[str]:
+    async def smembers(self, key: str) -> Set[str]:
         if not self.redis:
             raise redis.ConnectionError("Redis client not initialized")
 
-        return await cast(Awaitable[set[str]], self.redis.smembers(self.set_key))
+        prefixed_key = self.get_set_key(key)
+        return await cast(Awaitable[set[str]], self.redis.smembers(prefixed_key))
 
-    async def srem(self, value: str) -> int:
+    async def srem(self, key: str, value: str) -> int:
         if not self.redis:
             raise redis.ConnectionError("Redis client not initialized")
 
-        return await cast(Awaitable[int], self.redis.srem(self.set_key, value))
+        prefixed_key = self.get_set_key(key)
+        return await cast(Awaitable[int], self.redis.srem(prefixed_key, value))

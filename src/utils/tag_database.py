@@ -17,7 +17,7 @@ class TagDatabase(RedisManager):
         from utils.tag_models import TagData
 
         tags: dict[str, TagData] = {}
-        tag_names = await self.smembers()
+        tag_names = await self.smembers("")
 
         # get each tag's data
         for name in tag_names:
@@ -40,7 +40,7 @@ class TagDatabase(RedisManager):
 
     async def add_tag(self, tag: "TagData") -> bool:
         # add the tag name to the set of all tags
-        await self.sadd(tag.name)
+        await self.sadd("", tag.name)
 
         return await self.set(tag.name, tag.to_json())
 
@@ -58,7 +58,7 @@ class TagDatabase(RedisManager):
             return False
 
         # remove the tag name from the set of all tags
-        await self.srem(name)
+        await self.srem("", name)
 
         await self.delete(name)
         return True
