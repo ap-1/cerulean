@@ -37,7 +37,7 @@ class Snowpea(commands.Cog):
         initiated_count = await self.tracker.get_initiated_count(target_user.id)
 
         embed = discord.Embed(
-            title=f"Snowpea Stats for {target_user.display_name}",
+            title=f"Stats for {target_user.display_name}",
             color=discord.Color.green(),
         )
 
@@ -128,7 +128,9 @@ class Snowpea(commands.Cog):
 
         embed = discord.Embed(
             title="Wall of Shame" if resolved == "received" else "Wall of Fame",
-            color=discord.Color.blue(),
+            color=discord.Color.red()
+            if resolved == "received"
+            else discord.Color.green(),
         )
 
         # add fields for each user
