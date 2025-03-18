@@ -58,9 +58,7 @@ class Snowpea(commands.Cog):
     @snowpea_group.command(
         name="leaderboard", description="Show snowpea statistics leaderboard"
     )
-    @app_commands.describe(
-        category="The type of leaderboard to show (initated or received)"
-    )
+    @app_commands.describe(category="The type of leaderboard to show")
     @app_commands.choices(
         category=[
             app_commands.Choice(name="Received (been snowpea'd)", value="received"),
@@ -71,22 +69,21 @@ class Snowpea(commands.Cog):
     async def snowpea_leaderboard(
         self,
         ctx: commands.Context[commands.Bot],
-        category: app_commands.Choice[str] | str,
+        category: app_commands.Choice[str],
     ) -> None:
         await ctx.defer()
 
-        if isinstance(category, app_commands.Choice):
-            category = category.value
+        resolved = category.value.lower()
 
         # validate category
-        if category.lower() not in ["received", "initiated"]:
+        if resolved not in ["received", "initiated"]:
             await ctx.reply(
                 "invalid category, choose either 'received' or 'initiated'",
                 ephemeral=True,
             )
             return
 
-        user_ids = await self.tracker.get_users_with_stats(category)
+        user_ids = await self.tracker.get_users_with_stats(resolved)
 
         if not user_ids:
             await ctx.reply("no statistics available yet", ephemeral=True)
@@ -109,7 +106,7 @@ class Snowpea(commands.Cog):
                     # skip users not in the guild
                     continue
 
-                if category.lower() == "received":
+                if resolved == "received":
                     count = await self.tracker.get_received_count(member.id)
                 else:  # initiated
                     count = await self.tracker.get_initiated_count(member.id)
@@ -130,7 +127,7 @@ class Snowpea(commands.Cog):
             return
 
         embed = discord.Embed(
-            title="Wall of Shame" if category.lower() == "received" else "Wall of Fame",
+            title="Wall of Shame" if resolved == "received" else "Wall of Fame",
             color=discord.Color.blue(),
         )
 
