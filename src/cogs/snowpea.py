@@ -164,7 +164,7 @@ class Snowpea(commands.Cog):
             return
 
         # ignore non-snowpea reactions
-        if payload.emoji.name != "snowpea" or payload.emoji.id not in [
+        if payload.emoji.id not in [
             Meta.SNOWPEA.value,
             Meta.FIREPEA.value,
         ]:
