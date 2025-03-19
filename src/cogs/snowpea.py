@@ -1,12 +1,22 @@
 from typing import cast, override
 
 import discord
-from discord import PartialEmoji, app_commands
+from discord import app_commands
 from discord.ext import commands
 from discord.member import Member
 
 from utils.ids import Meta, Role
 from utils.tracker import SnowpeaTracker
+
+
+def select_emoji(id: int) -> discord.PartialEmoji:
+    match id:
+        case Meta.SNOWPEA.value:
+            return discord.PartialEmoji(name="snowpea", id=id)
+        case Meta.FIREPEA.value:
+            return discord.PartialEmoji(name="firepea", id=id)
+        case _:
+            return discord.PartialEmoji(name="snowpea", id=Meta.SNOWPEA.value)
 
 
 class Snowpea(commands.Cog):
@@ -154,7 +164,10 @@ class Snowpea(commands.Cog):
             return
 
         # ignore non-snowpea reactions
-        if payload.emoji.name != "snowpea" or payload.emoji.id != Meta.SNOWPEA.value:
+        if payload.emoji.name != "snowpea" or payload.emoji.id not in [
+            Meta.SNOWPEA.value,
+            Meta.FIREPEA.value,
+        ]:
             return
 
         # ignore reactions in the wrong server
@@ -174,7 +187,7 @@ class Snowpea(commands.Cog):
 
         def remove_reaction():
             return message.remove_reaction(
-                discord.PartialEmoji(name="snowpea", id=Meta.SNOWPEA.value),
+                select_emoji(cast(int, payload.emoji.id)),
                 member,
             )
 
@@ -198,11 +211,9 @@ class Snowpea(commands.Cog):
 
         # replace reaction with own reaction
         await message.clear_reaction(
-            emoji=PartialEmoji(name="snowpea", id=Meta.SNOWPEA.value)
+            select_emoji(payload.emoji.id),
         )
-        await message.add_reaction(
-            discord.PartialEmoji(name="snowpea", id=Meta.SNOWPEA.value)
-        )
+        await message.add_reaction(select_emoji(payload.emoji.id))
 
         # don't ping if author is in cooldown period
         if await self.tracker.is_author_in_cooldown(author.id):
