@@ -7,6 +7,7 @@ import typing
 from typing import override
 
 import discord
+import PyPDF2
 from discord import app_commands
 from discord.ext import commands
 
@@ -46,6 +47,8 @@ class General(commands.Cog):
             "ctx": ctx,
             "discord": discord,
             "commands": commands,
+            "Meta": Meta,
+            "PyPDF2": PyPDF2,
         }
 
         original_stdout = sys.stdout
