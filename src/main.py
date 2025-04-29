@@ -38,6 +38,7 @@ async def main(token: str):
         await bot.load_extension("cogs.verify")
         await bot.load_extension("cogs.on_leave")
         await bot.load_extension("cogs.tags")
+        await bot.load_extension("cogs.troll")
 
         await bot.start(token=token)
 
