@@ -7,11 +7,10 @@ import typing
 from typing import override
 
 import discord
-import PyPDF2
 from discord import app_commands
 from discord.ext import commands
 
-from utils.ids import Meta
+from utils.ids import Meta, Role
 
 
 class RedirectToEmbed(io.StringIO):
@@ -48,7 +47,7 @@ class General(commands.Cog):
             "discord": discord,
             "commands": commands,
             "Meta": Meta,
-            "PyPDF2": PyPDF2,
+            "Role": Role,
         }
 
         original_stdout = sys.stdout
