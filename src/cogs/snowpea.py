@@ -5,18 +5,8 @@ from discord import app_commands
 from discord.ext import commands
 from discord.member import Member
 
-from utils.ids import Meta, Role
+from utils.ids import PEAS, SPECIAL, Meta, Role
 from utils.tracker import SnowpeaTracker
-
-
-def select_emoji(id: int) -> discord.PartialEmoji:
-    match id:
-        case Meta.SNOWPEA.value:
-            return discord.PartialEmoji(name="snowpea", id=id)
-        case Meta.FIREPEA.value:
-            return discord.PartialEmoji(name="firepea", id=id)
-        case _:
-            return discord.PartialEmoji(name="snowpea", id=Meta.SNOWPEA.value)
 
 
 class Snowpea(commands.Cog):
@@ -164,10 +154,7 @@ class Snowpea(commands.Cog):
             return
 
         # ignore non-snowpea reactions
-        if payload.emoji.id not in [
-            Meta.SNOWPEA.value,
-            Meta.FIREPEA.value,
-        ]:
+        if payload.emoji.id not in PEAS:
             return
 
         # ignore reactions in the wrong server
@@ -176,9 +163,7 @@ class Snowpea(commands.Cog):
 
         # ignore if reaction not made by an admin/mod
         member = payload.member
-        if not any(
-            role.id in (Role.ADMIN.value, Role.MOD.value) for role in member.roles
-        ):
+        if not any(role.id in SPECIAL for role in member.roles):
             return
 
         guild = cast(discord.Guild, self.bot.get_guild(payload.guild_id))
@@ -186,10 +171,7 @@ class Snowpea(commands.Cog):
         message = await channel.fetch_message(payload.message_id)
 
         def remove_reaction():
-            return message.remove_reaction(
-                select_emoji(cast(int, payload.emoji.id)),
-                member,
-            )
+            return message.remove_reaction(payload.emoji, member)
 
         # decline if reaction is in the current student channel
         if channel.id == Meta.CURRENT_STUDENT_CHANNEL.value:
@@ -210,10 +192,8 @@ class Snowpea(commands.Cog):
         await self.tracker.mark_message_processed(payload.message_id)
 
         # replace reaction with own reaction
-        await message.clear_reaction(
-            select_emoji(payload.emoji.id),
-        )
-        await message.add_reaction(select_emoji(payload.emoji.id))
+        await message.clear_reaction(payload.emoji)
+        await message.add_reaction(payload.emoji)
 
         # don't ping if author is in cooldown period
         if await self.tracker.is_author_in_cooldown(author.id):
