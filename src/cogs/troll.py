@@ -13,7 +13,7 @@ class Troll(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if message.author.id in UNDESIRABLES:
-            if random.random() < 0.2:
+            if random.random() < 0.33:
                 try:
                     await message.delete()
                 except discord.Forbidden:
