@@ -7,10 +7,16 @@ import typing
 from typing import override
 
 import discord
+import requests
 from discord import app_commands
 from discord.ext import commands
 
-from utils.ids import Meta, Role
+from utils.ids import EVAL_WHITELIST, Meta, Role
+
+
+@commands.check
+async def is_whitelisted(ctx: commands.Context[commands.Bot]):
+    return await ctx.bot.is_owner(ctx.author) or ctx.author.id in EVAL_WHITELIST
 
 
 class RedirectToEmbed(io.StringIO):
@@ -38,7 +44,7 @@ class General(commands.Cog):
         await ctx.reply(content=f"🏓 pong! took {latency}ms", ephemeral=True)
 
     @commands.command(name="eval", hidden=True)
-    @commands.is_owner()
+    @is_whitelisted
     async def eval_cmd(self, ctx: commands.Context[commands.Bot], *, code: str):
         env: dict[str, typing.Any] = {
             "__builtins__": __builtins__,
@@ -46,6 +52,7 @@ class General(commands.Cog):
             "ctx": ctx,
             "discord": discord,
             "commands": commands,
+            "requests": requests,
             "Meta": Meta,
             "Role": Role,
         }
