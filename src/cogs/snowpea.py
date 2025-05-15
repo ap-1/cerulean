@@ -5,7 +5,7 @@ from discord import app_commands
 from discord.ext import commands
 from discord.member import Member
 
-from utils.ids import PEAS, SPECIAL, Meta, Role
+from utils.ids import PEAS, SNOWPEA_WHITELIST, Meta, Role
 from utils.tracker import SnowpeaTracker
 
 
@@ -163,7 +163,7 @@ class Snowpea(commands.Cog):
 
         # ignore if reaction not made by an admin/mod
         member = payload.member
-        if not any(role.id in SPECIAL for role in member.roles):
+        if not any(role.id in SNOWPEA_WHITELIST for role in member.roles):
             return
 
         guild = cast(discord.Guild, self.bot.get_guild(payload.guild_id))
