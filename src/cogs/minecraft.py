@@ -1,6 +1,5 @@
 import asyncio
 import os
-import time
 from typing import cast, override
 
 import discord
@@ -28,16 +27,6 @@ class MinecraftTracker(RedisManager):
     async def set_last_status(self, is_online: bool) -> None:
         await self.set("last_status", "online" if is_online else "offline")
 
-    async def get_last_check_time(self) -> int:
-        time_str = await self.get("last_check")
-        if time_str is None:
-            return 0
-
-        return int(time_str)
-
-    async def set_last_check_time(self, timestamp: int) -> None:
-        await self.set("last_check", str(timestamp))
-
 
 class Minecraft(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -59,15 +48,11 @@ class Minecraft(commands.Cog):
                 # check current server status
                 is_online = await self.check_server_status()
                 last_status = await self.tracker.get_last_status()
-                current_time = int(time.time())
 
-                # if status changed, send notification
-                if last_status is not None and last_status != is_online:
+                # if status changed or first run, send notification
+                if last_status != is_online:
                     await self.send_status_notification(is_online)
-
-                # update stored status and check time
-                await self.tracker.set_last_status(is_online)
-                await self.tracker.set_last_check_time(current_time)
+                    await self.tracker.set_last_status(is_online)
 
             except Exception as e:
                 print(f"Error in Minecraft monitor: {e}")
@@ -97,7 +82,7 @@ class Minecraft(commands.Cog):
                     color=discord.Color.green(),
                     timestamp=discord.utils.utcnow(),
                 )
-                embed.set_footer(text=f"Server IP: `{self.server_host}`")
+                embed.set_footer(text=f"Server IP: {self.server_host}")
             else:
                 owner_id = cast(int, self.bot.owner_id)
                 owner = cast(discord.Member, guild.get_member(owner_id))
@@ -152,7 +137,7 @@ class Minecraft(commands.Cog):
                 )
             elif status.players.sample:
                 player_names = [player.name for player in status.players.sample]
-                
+
                 if len(player_names) <= 15:
                     # show all players inline if not too many
                     embed.add_field(
@@ -165,10 +150,10 @@ class Minecraft(commands.Cog):
                     displayed_names = player_names[:15]
                     remaining = status.players.online - 15
                     player_list = "\n".join(f"• {name}" for name in displayed_names)
-                    
+
                     if remaining > 0:
                         player_list += f"\n... and {remaining} more"
-                    
+
                     embed.add_field(
                         name="Players",
                         value=player_list,
@@ -182,7 +167,7 @@ class Minecraft(commands.Cog):
                     inline=False,
                 )
 
-            embed.set_footer(text=f"Server IP: `{self.server_host}`")
+            embed.set_footer(text=f"Server IP: {self.server_host}")
 
         except (TimeoutError, ConnectionRefusedError):
             embed = discord.Embed(
