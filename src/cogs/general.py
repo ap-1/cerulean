@@ -46,10 +46,18 @@ class General(commands.Cog):
     @commands.command(name="eval", hidden=True)
     @is_whitelisted
     async def eval_cmd(self, ctx: commands.Context[commands.Bot], *, code: str):
+        from utils.redis import RedisManager
+
+        # create RedisManager just for connection, but use raw client for arbitrary keys
+        # the prefix doesn't matter, we won't use the wrapper methods
+        redis_manager = RedisManager(key_prefix="temp")
+        await redis_manager.connect()
+
         env: dict[str, typing.Any] = {
             "__builtins__": __builtins__,
             "bot": self.bot,
             "ctx": ctx,
+            "redis": redis_manager.redis,
             "discord": discord,
             "commands": commands,
             "requests": requests,
@@ -84,6 +92,13 @@ class General(commands.Cog):
         finally:
             stdout_output = "\n".join(sys.stdout.output)
             sys.stdout = original_stdout
+
+            # clean up the redis connection
+            try:
+                await redis_manager.close()
+            except Exception as e:
+                print(f"Failed to close redis connection: {e}")
+                pass
 
         if stdout_output:
             embed.add_field(
