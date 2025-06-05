@@ -1,10 +1,8 @@
 import asyncio
 import os
-from io import StringIO
 from typing import cast, override
 
 import discord
-import paramiko
 from discord import app_commands
 from discord.ext import commands
 from mcstatus import JavaServer
@@ -191,83 +189,6 @@ class Minecraft(commands.Cog):
             )
 
         await ctx.reply(embed=embed)
-
-    @commands.hybrid_command(
-        name="restart_server",
-        description="Restart the Minecraft server if it's offline",
-    )
-    @app_commands.guilds(Meta.SERVER.value)
-    async def restart_server(self, ctx: commands.Context[commands.Bot]):
-        await ctx.defer()
-
-        is_online = await self.check_server_status()
-        if is_online:
-            embed = discord.Embed(
-                title="Cannot restart",
-                description="The server is already online.",
-                color=discord.Color.orange(),
-                timestamp=discord.utils.utcnow(),
-            )
-            await ctx.reply(embed=embed)
-            return
-
-        ssh_host = os.getenv("SERVER_HOST")
-        ssh_user = os.getenv("SERVER_USERNAME")
-        ssh_key_data = os.getenv("SSH_PRIVATE_KEY")
-        docker_path = os.getenv("DOCKER_PATH")
-
-        if not all([ssh_host, ssh_user, ssh_key_data, docker_path]):
-            embed = discord.Embed(
-                title="Cannot restart",
-                description="One or more required environment variables are not set.",
-                color=discord.Color.red(),
-                timestamp=discord.utils.utcnow(),
-            )
-            await ctx.reply(embed=embed)
-            return
-
-        try:
-            key = paramiko.Ed25519Key(file_obj=StringIO(ssh_key_data))
-            ssh = paramiko.SSHClient()
-            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            ssh.connect(
-                hostname=cast(str, ssh_host), username=ssh_user, pkey=key, timeout=10
-            )
-
-            command = (
-                f'cd "{docker_path}" && docker compose down && docker compose up -d'
-            )
-            _stdin, stdout, stderr = ssh.exec_command(command)
-
-            out = stdout.read().decode().strip()
-            err = stderr.read().decode().strip()
-            ssh.close()
-
-            embed = discord.Embed(
-                title="Server restarted",
-                color=discord.Color.green(),
-                timestamp=discord.utils.utcnow(),
-            )
-
-            if out:
-                embed.add_field(
-                    name="Output", value=f"```{out[:1000]}```", inline=False
-                )
-            if err:
-                embed.add_field(
-                    name="Errors", value=f"```{err[:1000]}```", inline=False
-                )
-
-            await ctx.reply(embed=embed)
-
-        except Exception as e:
-            embed = discord.Embed(
-                title="Restart failed",
-                description=f"```{str(e)[:1000]}```",
-                color=discord.Color.red(),
-                timestamp=discord.utils.utcnow(),
-            )
-            await ctx.reply(embed=embed)
 
     @override
     async def cog_unload(self) -> None:
