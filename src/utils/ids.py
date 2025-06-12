@@ -1,4 +1,5 @@
 from enum import Enum
+from discord.ext import commands
 
 
 class Role(Enum):
@@ -42,3 +43,8 @@ PEAS = [
     1359612156047392828,
     1364031231901044806,
 ]
+
+
+@commands.check
+async def is_whitelisted(ctx: commands.Context[commands.Bot]):
+    return await ctx.bot.is_owner(ctx.author) or ctx.author.id in EVAL_WHITELIST

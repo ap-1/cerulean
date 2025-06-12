@@ -11,12 +11,7 @@ import requests
 from discord import app_commands
 from discord.ext import commands
 
-from utils.ids import EVAL_WHITELIST, Meta, Role
-
-
-@commands.check
-async def is_whitelisted(ctx: commands.Context[commands.Bot]):
-    return await ctx.bot.is_owner(ctx.author) or ctx.author.id in EVAL_WHITELIST
+from utils.ids import Meta, Role, is_whitelisted
 
 
 class RedirectToEmbed(io.StringIO):
