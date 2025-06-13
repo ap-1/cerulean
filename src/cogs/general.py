@@ -1,3 +1,4 @@
+import asyncio
 import io
 import re
 import sys
@@ -56,6 +57,7 @@ class General(commands.Cog):
             "discord": discord,
             "commands": commands,
             "requests": requests,
+            "asyncio": asyncio,
             "Meta": Meta,
             "Role": Role,
         }
