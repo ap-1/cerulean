@@ -1,5 +1,6 @@
 import asyncio
 import io
+import random
 import re
 import sys
 import textwrap
@@ -56,6 +57,7 @@ class General(commands.Cog):
             "redis": redis_manager.redis,
             "discord": discord,
             "commands": commands,
+            "random": random,
             "requests": requests,
             "asyncio": asyncio,
             "Meta": Meta,
