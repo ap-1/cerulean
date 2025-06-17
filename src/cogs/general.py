@@ -87,7 +87,7 @@ class General(commands.Cog):
             error = "".join(traceback.format_exception(type(e), e, e.__traceback__))
 
             embed = discord.Embed(color=discord.Color.red())
-            embed.add_field(name="error", value=f"```py\n{error}\n```", inline=False)
+            embed.add_field(name="stderr", value=f"```py\n{error}\n```", inline=False)
         finally:
             stdout_output = "\n".join(sys.stdout.output)
             sys.stdout = original_stdout
