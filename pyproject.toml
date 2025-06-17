@@ -6,7 +6,9 @@ description = "CMU 2029 Discord bot"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "authlib>=1.6.0",
     "discord-py>=2.5.2",
+    "flask>=3.1.1",
     "mcstatus>=12.0.1",
     "python-dotenv>=1.0.1",
     "redis>=5.2.1",

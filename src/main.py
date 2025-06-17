@@ -17,7 +17,6 @@ if token is None:
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="c!", intents=intents)
 
-
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user}")
@@ -39,8 +38,10 @@ async def main(token: str):
         await bot.load_extension("cogs.tags")
         await bot.load_extension("cogs.minecraft")
         await bot.load_extension("cogs.nickname")
+        await bot.load_extension("cogs.new_verify")
 
         await bot.start(token=token)
 
 
-asyncio.run(main(token))
+if __name__ == "__main__":
+    asyncio.run(main(token))
