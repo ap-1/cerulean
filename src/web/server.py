@@ -8,7 +8,7 @@ from typing import Any
 
 from authlib.integrations.flask_client import OAuth
 from discord.ext import commands
-from flask import Flask, session, url_for
+from flask import Flask, redirect, session, url_for
 from werkzeug.serving import BaseWSGIServer, make_server
 
 from web.oauth import OAuthManager
@@ -57,6 +57,10 @@ class OAuthServer:
         self.server_thread: threading.Thread | None = None
 
     def setup_routes(self):
+        @self.app.route("/")
+        def home():
+            return redirect("https://discord.gg/UmmbZ8qPbV")
+
         @self.app.route("/health")
         def health():
             return {"status": "ok"}
