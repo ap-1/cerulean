@@ -26,8 +26,8 @@ class Nickname(commands.Cog):
     async def cog_unload(self) -> None:
         try:
             await self.redis_manager.close()
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Failed to close nickname Redis connection: {e}")
 
     @commands.hybrid_command(name="nick", description="Enforce a nickname for a user.")
     @app_commands.guilds(Meta.SERVER.value)
