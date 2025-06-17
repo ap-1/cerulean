@@ -6,15 +6,15 @@ from discord.ext import commands
 from discord.member import Member
 
 from utils.ids import PEAS, SNOWPEA_WHITELIST, Meta, Role
-from utils.tracker import SnowpeaTracker
+from utils.snowpea.database import SnowpeaDatabase
 
 
 class Snowpea(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot: commands.Bot = bot
-        self.tracker: SnowpeaTracker = SnowpeaTracker()
+        self.database: SnowpeaDatabase = SnowpeaDatabase()
 
-        self.bot.loop.create_task(self.tracker.connect())
+        self.bot.loop.create_task(self.database.connect())
 
     @commands.hybrid_group(name="snowpea", description="Snowpea related commands")
     @app_commands.guilds(Meta.SERVER.value)
@@ -33,8 +33,8 @@ class Snowpea(commands.Cog):
         # default to the invoker if no user is specified
         target_user = user or ctx.author
 
-        received_count = await self.tracker.get_received_count(target_user.id)
-        initiated_count = await self.tracker.get_initiated_count(target_user.id)
+        received_count = await self.database.get_received_count(target_user.id)
+        initiated_count = await self.database.get_initiated_count(target_user.id)
 
         embed = discord.Embed(
             title=f"Stats for {target_user.display_name}",
@@ -83,7 +83,7 @@ class Snowpea(commands.Cog):
             )
             return
 
-        user_ids = await self.tracker.get_users_with_stats(resolved)
+        user_ids = await self.database.get_users_with_stats(resolved)
 
         if not user_ids:
             await ctx.reply("no statistics available yet", ephemeral=True)
@@ -107,9 +107,9 @@ class Snowpea(commands.Cog):
                     continue
 
                 if resolved == "received":
-                    count = await self.tracker.get_received_count(member.id)
+                    count = await self.database.get_received_count(member.id)
                 else:  # initiated
-                    count = await self.tracker.get_initiated_count(member.id)
+                    count = await self.database.get_initiated_count(member.id)
 
                 if count > 0:
                     # only include users with non-zero counts
@@ -163,7 +163,7 @@ class Snowpea(commands.Cog):
 
         # ignore if reaction not made by an admin/mod
         member = payload.member
-        if not any(role.id in SNOWPEA_WHITELIST for role in member.roles):
+        if not member or not any(role.id in SNOWPEA_WHITELIST for role in member.roles):
             return
 
         guild = cast(discord.Guild, self.bot.get_guild(payload.guild_id))
@@ -177,33 +177,31 @@ class Snowpea(commands.Cog):
         if channel.id == Meta.CURRENT_STUDENT_CHANNEL.value:
             return await remove_reaction()
 
-        # decline if author is a prospective student or a bot
+        # decline if author is a first year or a bot
         author = cast(discord.Member, message.author)
-        if author.bot or any(
-            role.id == Role.PROSPECTIVE_STUDENT.value for role in author.roles
-        ):
+        if author.bot or any(role.id == Role.FIRST_YEAR.value for role in author.roles):
             return await remove_reaction()
 
         # check if this message has already been processed
-        if await self.tracker.is_message_processed(payload.message_id):
+        if await self.database.is_message_processed(payload.message_id):
             return await remove_reaction()
 
         # mark the message as processed to prevent duplicates
-        await self.tracker.mark_message_processed(payload.message_id)
+        await self.database.mark_message_processed(payload.message_id)
 
         # replace reaction with own reaction
         await message.clear_reaction(payload.emoji)
         await message.add_reaction(payload.emoji)
 
         # don't ping if author is in cooldown period
-        if await self.tracker.is_author_in_cooldown(author.id):
+        if await self.database.is_author_in_cooldown(author.id):
             return
 
-        await self.tracker.set_author_cooldown(author.id)
+        await self.database.set_author_cooldown(author.id)
 
         # update statistics
-        await self.tracker.increment_received_count(author.id)
-        await self.tracker.increment_initiated_count(member.id)
+        await self.database.increment_received_count(author.id)
+        await self.database.increment_initiated_count(member.id)
 
         current_student_channel = cast(
             discord.TextChannel, guild.get_channel(Meta.CURRENT_STUDENT_CHANNEL.value)
@@ -215,7 +213,7 @@ class Snowpea(commands.Cog):
     @override
     async def cog_unload(self) -> None:
         try:
-            await self.tracker.close()
+            await self.database.close()
         except Exception:
             pass
 

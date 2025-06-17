@@ -5,7 +5,7 @@ from utils.redis import RedisManager
 SNOWPEA_COOLDOWN_SECONDS = 30
 
 
-class SnowpeaTracker(RedisManager):
+class SnowpeaDatabase(RedisManager):
     def __init__(self) -> None:
         super().__init__(key_prefix="snowpea")
 
