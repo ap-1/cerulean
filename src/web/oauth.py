@@ -78,10 +78,9 @@ class OAuthManager(RedisManager):
                 )
                 embed.add_field(
                     name="Discord",
-                    value=f"{member.mention} ({member.id})",
-                    inline=False,
+                    value=member.mention,
                 )
-                embed.add_field(name="AndrewID", value=f"{andrewid}", inline=False)
+                embed.add_field(name="AndrewID", value=andrewid)
                 await channel.send(embed=embed)
 
         except Exception as e:
