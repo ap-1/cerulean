@@ -268,7 +268,7 @@ class Autoresponse(commands.Cog):
             )
 
             embed.add_field(
-                name=f"{name} ({probability_percent}%)",
+                name=f"`{name}` ({probability_percent}%)",
                 value=f"**Triggers:** {triggers_str}\n**Template:** ```\n{template_preview}\n```",
                 inline=False,
             )
