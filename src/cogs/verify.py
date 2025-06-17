@@ -105,20 +105,6 @@ class Verify(commands.Cog):
             if verified_role in user.roles:
                 await user.remove_roles(verified_role)
 
-            # create confirmation embed
-            channel = cast(
-                discord.TextChannel, guild.get_channel(Meta.VERIFICATIONS_CHANNEL.value)
-            )
-            if channel:
-                embed = discord.Embed(
-                    title="User Unverified",
-                    description=f"{user.mention} has been unverified",
-                    color=discord.Color.orange(),
-                )
-                embed.add_field(name="Previous AndrewID", value=andrewid)
-                embed.add_field(name="Unverified by", value=interaction.user.mention)
-                await channel.send(embed=embed)
-
             await interaction.response.send_message(
                 f"{user.mention} has been unverified.", ephemeral=True
             )

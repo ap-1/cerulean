@@ -33,8 +33,8 @@ async def on_ready():
 async def main(token: str):
     async with bot:
         await bot.load_extension("cogs.general")
-        await bot.load_extension("cogs.snowpea")
         await bot.load_extension("cogs.verify")
+        await bot.load_extension("cogs.snowpea")
         await bot.load_extension("cogs.tags")
         await bot.load_extension("cogs.minecraft")
         await bot.load_extension("cogs.nickname")

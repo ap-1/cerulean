@@ -114,34 +114,5 @@ class OAuthManager(RedisManager):
 
             await member.add_roles(*roles_to_add)
 
-            # log verification
-            channel = cast(
-                discord.TextChannel, guild.get_channel(Meta.VERIFICATIONS_CHANNEL.value)
-            )
-            if channel:
-                embed = discord.Embed(
-                    title="AndrewID Verified",
-                    color=discord.Color.green(),
-                )
-                embed.add_field(
-                    name="Discord",
-                    value=member.mention,
-                )
-                embed.add_field(name="AndrewID", value=andrewid)
-
-                if roles_to_add:
-                    roles = [role.mention for role in roles_to_add]
-                    embed.add_field(
-                        name="Roles Assigned", value=", ".join(roles), inline=False
-                    )
-                else:
-                    embed.add_field(
-                        name="Roles Assigned",
-                        value="None",
-                        inline=False,
-                    )
-
-                await channel.send(embed=embed)
-
         except Exception as e:
             print(f"Error completing Discord verification: {e}")
