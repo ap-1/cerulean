@@ -36,6 +36,7 @@ class DirectoryParser:
         "Engineering & Public Policy": [Role.CIT],
         "English": [Role.DIETRICH],
         "Entertainment Technology": [Role.CFA],
+        "General Computer Science": [Role.SCS],
         "General Dietrich College": [Role.DIETRICH],
         "History": [Role.DIETRICH],
         "Human-Computer Interaction": [Role.SCS],
@@ -59,15 +60,15 @@ class DirectoryParser:
         "Psychology": [Role.DIETRICH],
         "Public Management:Sch of Pub Pol & Mgt": [Role.HEINZ],
         "Public Policy & Mgt:Sch of Pub Pol & Mgt": [Role.HEINZ],
+        "Qatar Biological Sciences": [Role.MCS],
+        "Qatar Business Administration": [Role.TEPPER],
+        "Qatar Computer Science": [Role.SCS],
+        "Qatar Information Systems": [Role.DIETRICH, Role.HEINZ],
         "Robotics": [Role.SCS],
         "SCS Interdisciplinary": [Role.SCS],
         "Social & Decision Sciences": [Role.DIETRICH],
         "Software & Societal Systems": [Role.SCS],
         "Statistics and Data Science": [Role.DIETRICH],
-        "Qatar Computer Science": [Role.SCS],
-        "Qatar Information Systems": [Role.DIETRICH, Role.HEINZ],
-        "Qatar Biological Sciences": [Role.MCS],
-        "Qatar Business Administration": [Role.TEPPER],
     }
 
     LEVEL_MAPPING: dict[str, Role] = {
