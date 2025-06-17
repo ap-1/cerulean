@@ -1,6 +1,7 @@
 [project]
 name = "cerulean"
 version = "0.1.0"
+authors = [{ name = "Anish Pallati", email = "apallati@anish.land" }]
 license = "Apache-2.0"
 description = "CMU 2029 Discord bot"
 readme = "README.md"
