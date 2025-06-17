@@ -9,6 +9,7 @@ from typing import Any
 from authlib.integrations.flask_client import OAuth
 from discord.ext import commands
 from flask import Flask, redirect, session, url_for
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.serving import BaseWSGIServer, make_server
 
 from web.oauth import OAuthManager
@@ -36,6 +37,7 @@ class OAuthServer:
         self.bot: commands.Bot = bot
         self.oauth_manager: OAuthManager = OAuthManager()
         self.app: Flask = Flask(__name__)
+        self.app.wsgi_app = ProxyFix(self.app.wsgi_app, x_proto=1, x_host=1)
         self.app.secret_key = os.getenv("FLASK_SECRET_KEY", secrets.token_urlsafe(32))
 
         self.port: int = port
