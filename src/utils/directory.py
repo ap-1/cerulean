@@ -78,6 +78,7 @@ class DirectoryParser:
         "Sophomore": Role.UNDERGRAD,
         "Junior": Role.UNDERGRAD,
         "Senior": Role.UNDERGRAD,
+        "Fifth-Year Senior": Role.UNDERGRAD,
         "Masters": Role.GRAD,
         "Doctoral": Role.PHD,
     }
