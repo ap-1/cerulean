@@ -98,7 +98,9 @@ class OAuthManager(RedisManager):
                 await member.remove_roles(*roles_to_remove)
 
             # add new roles based on directory lookup
-            roles_to_add: list[discord.Role] = []
+            roles_to_add: list[discord.Role] = [
+                cast(discord.Role, guild.get_role(Role.VERIFIED.value))
+            ]
 
             for dept_role in department_roles:
                 role_obj = guild.get_role(dept_role.value)
@@ -110,8 +112,7 @@ class OAuthManager(RedisManager):
                 if class_role_obj:
                     roles_to_add.append(class_role_obj)
 
-            if roles_to_add:
-                await member.add_roles(*roles_to_add)
+            await member.add_roles(*roles_to_add)
 
             # log verification
             channel = cast(
