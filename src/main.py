@@ -38,6 +38,7 @@ async def main(token: str):
         await bot.load_extension("cogs.tags")
         await bot.load_extension("cogs.minecraft")
         await bot.load_extension("cogs.nickname")
+        await bot.load_extension("cogs.autoresponse")
 
         await bot.start(token=token)
 
