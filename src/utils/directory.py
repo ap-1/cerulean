@@ -64,6 +64,10 @@ class DirectoryParser:
         "Social & Decision Sciences": [Role.DIETRICH],
         "Software & Societal Systems": [Role.SCS],
         "Statistics and Data Science": [Role.DIETRICH],
+        "Qatar Computer Science": [Role.SCS],
+        "Qatar Information Systems": [Role.DIETRICH, Role.HEINZ],
+        "Qatar Biological Sciences": [Role.MCS],
+        "Qatar Business Administration": [Role.TEPPER],
     }
 
     LEVEL_MAPPING: dict[str, Role] = {
