@@ -63,16 +63,6 @@ class Verify(commands.Cog):
         except Exception:
             pass
 
-        channel = cast(
-            discord.TextChannel, guild.get_channel(Meta.VERIFY_CHANNEL.value)
-        )
-        if interaction.channel_id != channel.id:
-            await interaction.response.send_message(
-                content="oops! please use the verification channel.",
-                ephemeral=True,
-            )
-            return
-
         view = discord.ui.View(timeout=300)
         verification_url = self.oauth_server.get_verification_url(interaction.user.id)
         oauth_button: discord.ui.Button[discord.ui.View] = discord.ui.Button(
