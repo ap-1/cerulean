@@ -144,6 +144,8 @@ class OAuthServer:
         )
 
     def error_page(self, message: str):
+        session.clear()
+
         return BASE_HTML.format(status="Error", message=message)
 
     def start_server(self, host: str = "0.0.0.0"):
