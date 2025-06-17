@@ -5,7 +5,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from utils.ids import Meta
+from utils.ids import Meta, Role
 from web.oauth import OAuthManager
 from web.server import OAuthServer
 
@@ -83,6 +83,64 @@ class Verify(commands.Cog):
         view.add_item(oauth_button)
 
         await interaction.response.send_message(view=view, ephemeral=True)
+
+    @app_commands.command(
+        name="unverify", description="Remove verification from a user."
+    )
+    @app_commands.describe(user="The Discord user to unverify")
+    @app_commands.guilds(Meta.SERVER.value)
+    @commands.has_any_role(Role.ADMIN.value, Role.MOD.value)
+    async def unverify(self, interaction: discord.Interaction, user: discord.Member):
+        try:
+            # check if user has an andrewid
+            andrewid = await self.oauth_manager.get_andrewid(user.id)
+            if not andrewid:
+                await interaction.response.send_message(
+                    f"{user.mention} is not verified.", ephemeral=True
+                )
+                return
+
+            # remove andrewid from database
+            await self.oauth_manager.delete(f"user:{user.id}")
+            await self.oauth_manager.delete(f"andrewid:{andrewid}")
+
+            # add unverified role back
+            guild = cast(discord.Guild, self.bot.get_guild(Meta.SERVER.value))
+            unverified_role = guild.get_role(Role.UNVERIFIED.value)
+            if unverified_role and unverified_role not in user.roles:
+                await user.add_roles(unverified_role)
+
+            # create confirmation embed
+            channel = cast(
+                discord.TextChannel, guild.get_channel(Meta.VERIFICATIONS_CHANNEL.value)
+            )
+            if channel:
+                embed = discord.Embed(
+                    title="User Unverified",
+                    description=f"{user.mention} has been unverified",
+                    color=discord.Color.orange(),
+                )
+                embed.add_field(name="Previous AndrewID", value=andrewid)
+                embed.add_field(name="Unverified by", value=interaction.user.mention)
+                await channel.send(embed=embed)
+
+            await interaction.response.send_message(
+                f"{user.mention} has been unverified.", ephemeral=True
+            )
+
+        except Exception as e:
+            await interaction.response.send_message(
+                f"Error unverifying user: {str(e)}", ephemeral=True
+            )
+
+    @unverify.error
+    async def unverify_error(
+        self, interaction: discord.Interaction, error: app_commands.AppCommandError
+    ):
+        if isinstance(error, app_commands.MissingAnyRole):
+            await interaction.response.send_message(
+                "oops! you don't have permission to use this command.", ephemeral=True
+            )
 
 
 async def setup(bot: commands.Bot):
