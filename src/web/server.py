@@ -32,11 +32,14 @@ BASE_HTML = """
 
 
 class OAuthServer:
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: commands.Bot, port: int = 8080):
         self.bot: commands.Bot = bot
         self.oauth_manager: OAuthManager = OAuthManager()
         self.app: Flask = Flask(__name__)
         self.app.secret_key = os.getenv("FLASK_SECRET_KEY", secrets.token_urlsafe(32))
+
+        self.port: int = port
+        self.base_url: str = os.getenv("OAUTH_BASE_URL", f"http://localhost:{port}")
 
         # setup OAuth
         self.oauth: OAuth = OAuth(self.app)
@@ -136,12 +139,12 @@ class OAuthServer:
     def error_page(self, message: str):
         return BASE_HTML.format(status="Error", message=message)
 
-    def start_server(self, host: str = "0.0.0.0", port: int = 8080):
+    def start_server(self, host: str = "0.0.0.0"):
         """Start the Flask server in a separate thread"""
 
         def run_server():
-            self.server = make_server(host, port, self.app, threaded=True)
-            print(f"OAuth server started on http://{host}:{port}")
+            self.server = make_server(host, self.port, self.app, threaded=True)
+            print(f"OAuth server started on http://{host}:{self.port}")
             self.server.serve_forever()
 
         self.server_thread = threading.Thread(target=run_server, daemon=True)
@@ -157,5 +160,4 @@ class OAuthServer:
     def get_verification_url(self, user_id: int) -> str:
         """Get the verification URL for a user"""
 
-        base_url = os.getenv("OAUTH_BASE_URL", "http://localhost:8080")
-        return f"{base_url}/oauth/login/{user_id}"
+        return f"{self.base_url}/oauth/login/{user_id}"

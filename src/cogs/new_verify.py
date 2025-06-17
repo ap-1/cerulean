@@ -1,3 +1,4 @@
+import os
 from typing import cast, override
 
 import discord
@@ -13,7 +14,9 @@ class NewVerify(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot: commands.Bot = bot
         self.oauth_manager: OAuthManager = OAuthManager()
-        self.oauth_server: OAuthServer = OAuthServer(bot)
+        self.oauth_server: OAuthServer = OAuthServer(
+            bot, int(os.getenv("PORT", default=8080))
+        )
 
         self.bot.loop.create_task(self._init_oauth())
 
