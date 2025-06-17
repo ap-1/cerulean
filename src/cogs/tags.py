@@ -431,7 +431,9 @@ class Tags(commands.Cog):
         self, ctx: commands.Context[commands.Bot], error: commands.CommandError
     ) -> None:
         if isinstance(error, commands.MissingAnyRole):
-            await ctx.reply("you don't have permission to delete tags", ephemeral=True)
+            await ctx.reply(
+                "oops! you don't have permission to delete tags", ephemeral=True
+            )
 
     @override
     async def cog_unload(self) -> None:
