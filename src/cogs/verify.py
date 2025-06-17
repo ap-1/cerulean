@@ -94,11 +94,16 @@ class Verify(commands.Cog):
             await self.oauth_manager.delete(f"user:{user.id}")
             await self.oauth_manager.delete(f"andrewid:{andrewid}")
 
-            # add unverified role back
+            # update roles
             guild = cast(discord.Guild, self.bot.get_guild(Meta.SERVER.value))
-            unverified_role = guild.get_role(Role.UNVERIFIED.value)
-            if unverified_role and unverified_role not in user.roles:
+            unverified_role = cast(discord.Role, guild.get_role(Role.UNVERIFIED.value))
+            verified_role = cast(discord.Role, guild.get_role(Role.VERIFIED.value))
+
+            if unverified_role not in user.roles:
                 await user.add_roles(unverified_role)
+
+            if verified_role in user.roles:
+                await user.remove_roles(verified_role)
 
             # create confirmation embed
             channel = cast(
