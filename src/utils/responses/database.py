@@ -1,7 +1,7 @@
 import json
 
 from utils.redis import RedisManager
-from utils.response_models import AutoresponseData
+from utils.responses.models import AutoresponseData
 
 
 class AutoresponseDatabase(RedisManager):

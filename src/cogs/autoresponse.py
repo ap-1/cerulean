@@ -7,8 +7,8 @@ from discord import app_commands
 from discord.ext import commands
 
 from utils.ids import Meta, Role
-from utils.response_database import AutoresponseDatabase
-from utils.response_models import AutoresponseData
+from utils.responses.database import AutoresponseDatabase
+from utils.responses.models import AutoresponseData
 
 
 class Autoresponse(commands.Cog):

@@ -7,9 +7,9 @@ from discord import app_commands
 from discord.ext import commands
 
 from utils.ids import Meta, Role
-from utils.tag_database import TagDatabase
-from utils.tag_models import TagData
-from utils.tag_utils import fuzzy_search
+from utils.tags.database import TagDatabase
+from utils.tags.models import TagData
+from utils.tags.utils import fuzzy_search
 
 
 def is_mod_or_admin(interaction: discord.Interaction) -> bool:

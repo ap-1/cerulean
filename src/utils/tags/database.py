@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from utils.redis import RedisManager
 
 if TYPE_CHECKING:
-    from utils.tag_models import TagData
+    from utils.tags.models import TagData
 
 
 class TagDatabase(RedisManager):
@@ -14,7 +14,7 @@ class TagDatabase(RedisManager):
         super().__init__(key_prefix="tag")
 
     async def get_all_tags(self) -> dict[str, "TagData"]:
-        from utils.tag_models import TagData
+        from utils.tags.models import TagData
 
         tags: dict[str, TagData] = {}
         tag_names = await self.smembers("")
@@ -29,7 +29,7 @@ class TagDatabase(RedisManager):
         return tags
 
     async def get_tag(self, name: str) -> "TagData | None":
-        from utils.tag_models import TagData
+        from utils.tags.models import TagData
 
         tag_json = await self.get(name)
         if tag_json:
