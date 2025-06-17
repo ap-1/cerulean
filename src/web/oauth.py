@@ -129,9 +129,9 @@ class OAuthManager(RedisManager):
                 embed.add_field(name="AndrewID", value=andrewid)
 
                 if roles_to_add:
-                    role_names = [role.name for role in roles_to_add]
+                    roles = [role.mention for role in roles_to_add]
                     embed.add_field(
-                        name="Roles Assigned", value=", ".join(role_names), inline=False
+                        name="Roles Assigned", value=", ".join(roles), inline=False
                     )
                 else:
                     embed.add_field(
