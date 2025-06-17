@@ -11,7 +11,6 @@ from views.student_type import NameModal
 class Verify(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot: commands.Bot = bot
-        self.verification_sessions: dict[int, str] = {}
 
     @app_commands.command(
         name="verify", description="Verify yourself to get access to the server."
