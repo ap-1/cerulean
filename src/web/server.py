@@ -95,7 +95,7 @@ class OAuthServer:
 
                 # verify it's a CMU email
                 if not email.endswith("cmu.edu"):
-                    return self.error_page("You must use a CMU email address")
+                    return self.error_page("You must use a CMU email address.")
 
                 andrewid = email.split("@")[0]
 
@@ -111,7 +111,7 @@ class OAuthServer:
 
                     if existing_user and existing_user != user_id:
                         return self.error_page(
-                            "This CMU email is already linked to another Discord account"
+                            "This CMU email is already linked to another Discord account."
                         )
 
                     # store the andrewid
@@ -134,7 +134,7 @@ class OAuthServer:
             except Exception as e:
                 print(f"OAuth callback error: {e}")
                 return self.error_page(
-                    "An unexpected error occurred during verification"
+                    "An unexpected error occurred during verification."
                 )
 
     def success_page(self, andrewid: str):
@@ -149,8 +149,7 @@ class OAuthServer:
         return BASE_HTML.format(status="Error", message=message)
 
     def start_server(self, host: str = "0.0.0.0"):
-        """Start the Flask server in a separate thread"""
-
+        # start the OAuth server in a separate thread
         def run_server():
             self.server = make_server(host, self.port, self.app, threaded=True)
             print(f"OAuth server started on http://{host}:{self.port}")
@@ -160,13 +159,9 @@ class OAuthServer:
         self.server_thread.start()
 
     def stop_server(self):
-        """Stop the Flask server"""
-
         if self.server:
             self.server.shutdown()
             print("OAuth server stopped")
 
     def get_verification_url(self, user_id: int) -> str:
-        """Get the verification URL for a user"""
-
         return f"{self.base_url}/oauth/login/{user_id}"
