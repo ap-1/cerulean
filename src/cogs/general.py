@@ -144,9 +144,15 @@ class General(commands.Cog):
     @eval_whitelist
     async def eval_cmd(self, ctx: commands.Context[commands.Bot], *, code: str):
         embed = await self._eval_helper(ctx, code)
-        response = await ctx.reply(embed=embed)
 
-        self._eval_messages[ctx.message.id] = (ctx, response)
+        # check if this message was seen before (i.e. was edited)
+        if ctx.message.id in self._eval_messages:
+            _, old_response = self._eval_messages[ctx.message.id]
+            await old_response.edit(embed=embed)
+            self._eval_messages[ctx.message.id] = (ctx, old_response)
+        else:
+            response = await ctx.reply(embed=embed)
+            self._eval_messages[ctx.message.id] = (ctx, response)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
@@ -161,7 +167,6 @@ class General(commands.Cog):
             return  # it's no longer an eval command
 
         # manually call the command again with the edited message
-        self._eval_messages[after.id] = (ctx, self._eval_messages[after.id][1])
         await self.bot.invoke(ctx)
 
 
