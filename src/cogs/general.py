@@ -79,6 +79,13 @@ class General(commands.Cog):
 
             return None
 
+        def get_role(role_id: int) -> discord.Role | None:
+            guild = ctx.guild
+            if guild:
+                return guild.get_role(role_id)
+
+            return None
+
         env: dict[str, typing.Any] = {
             "__builtins__": __builtins__,
             "bot": self.bot,
@@ -94,9 +101,16 @@ class General(commands.Cog):
             "get_channel": get_channel,
             "get_guild": get_guild,
             "get_message": get_message,
+            "get_role": get_role,
             "Meta": Meta,
-            "Role": Role,
         }
+
+        if ctx.guild:
+            env["guild"] = ctx.guild
+
+            for role_member in Role:
+                if role_member.value in await ctx.guild.fetch_roles():
+                    env[role_member.name] = ctx.guild.get_role(role_member.value)
 
         original_stdout = sys.stdout
         stdout_output = ""
