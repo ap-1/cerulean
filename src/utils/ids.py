@@ -51,5 +51,5 @@ PEAS = [
 
 
 @commands.check
-async def is_whitelisted(ctx: commands.Context[commands.Bot]):
+async def eval_whitelist(ctx: commands.Context[commands.Bot]):
     return await ctx.bot.is_owner(ctx.author) or ctx.author.id in EVAL_WHITELIST

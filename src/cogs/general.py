@@ -13,7 +13,7 @@ import requests
 from discord import app_commands
 from discord.ext import commands
 
-from utils.ids import Meta, Role, is_whitelisted
+from utils.ids import Meta, Role, eval_whitelist
 
 
 class RedirectToEmbed(io.StringIO):
@@ -41,7 +41,7 @@ class General(commands.Cog):
         await ctx.reply(content=f"🏓 pong! took {latency}ms", ephemeral=True)
 
     @commands.command(name="eval", hidden=True)
-    @is_whitelisted
+    @eval_whitelist
     async def eval_cmd(self, ctx: commands.Context[commands.Bot], *, code: str):
         from utils.redis import RedisManager
 
