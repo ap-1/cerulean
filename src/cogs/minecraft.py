@@ -1,3 +1,5 @@
+# pyright: reportUnknownMemberType=false
+
 import asyncio
 import os
 from typing import cast, override
