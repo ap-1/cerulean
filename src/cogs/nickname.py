@@ -4,7 +4,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from utils.ids import Meta, is_whitelisted
+from utils.ids import Meta, Role
 from utils.redis import RedisManager
 
 
@@ -35,7 +35,7 @@ class Nickname(commands.Cog):
         user="The user to set a nickname for",
         nickname="The nickname to set (leave empty to remove saved nickname)",
     )
-    @is_whitelisted
+    @commands.has_any_role(Role.ADMIN.value, Role.MOD.value)
     async def nick(
         self,
         ctx: commands.Context[commands.Bot],
@@ -65,7 +65,8 @@ class Nickname(commands.Cog):
         else:
             if len(nickname) > 32:
                 await ctx.reply(
-                    "nickname cannot be longer than 32 characters", ephemeral=True
+                    "oops! nickname cannot be longer than 32 characters.",
+                    ephemeral=True,
                 )
                 return
 
@@ -82,6 +83,15 @@ class Nickname(commands.Cog):
                     f"saved nickname `{nickname}` for {user.mention}, but couldn't set it",
                     ephemeral=True,
                 )
+
+    @nick.error
+    async def nick_error(
+        self, ctx: commands.Context[commands.Bot], error: commands.CommandError
+    ):
+        if isinstance(error, commands.MissingAnyRole):
+            await ctx.reply(
+                "oops! you don't have permission to use this command.", ephemeral=True
+            )
 
     @commands.Cog.listener()
     async def on_member_update(
