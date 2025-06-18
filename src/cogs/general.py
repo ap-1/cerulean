@@ -40,6 +40,13 @@ class General(commands.Cog):
         latency = round(self.bot.latency * 1000)
         await ctx.reply(content=f"🏓 pong! took {latency}ms", ephemeral=True)
 
+    @commands.hybrid_command(name="echo", hidden=True)
+    @app_commands.guilds(Meta.SERVER.value)
+    @commands.is_owner()
+    async def echo(self, ctx: commands.Context[commands.Bot], *, message: str):
+        await ctx.message.delete()
+        await ctx.send(content=message)
+
     @commands.command(name="eval", hidden=True)
     @eval_whitelist
     async def eval_cmd(self, ctx: commands.Context[commands.Bot], *, code: str):
