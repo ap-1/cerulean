@@ -10,7 +10,8 @@ from typing import override
 
 import discord
 import requests
-from discord import app_commands
+from discord import TextChannel, Thread, app_commands
+from discord.abc import GuildChannel, PrivateChannel
 from discord.ext import commands
 
 from utils.ids import Meta, Role, eval_whitelist
@@ -33,6 +34,9 @@ class RedirectToEmbed(io.StringIO):
 class General(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot: commands.Bot = bot
+        self._eval_messages: dict[
+            int, tuple[commands.Context[commands.Bot], discord.Message]
+        ] = {}
 
     @commands.hybrid_command(name="ping", description="Test the bot's latency.")
     @app_commands.guilds(Meta.SERVER.value)
@@ -46,15 +50,34 @@ class General(commands.Cog):
         await ctx.message.delete()
         await ctx.send(content=message)
 
-    @commands.command(name="eval", hidden=True)
-    @eval_whitelist
-    async def eval_cmd(self, ctx: commands.Context[commands.Bot], *, code: str):
+    async def _eval_helper(self, ctx: commands.Context[commands.Bot], code: str):
         from utils.redis import RedisManager
 
         # create RedisManager just for connection, but use raw client for arbitrary keys
         # the prefix doesn't matter, we won't use the wrapper methods
         redis_manager = RedisManager(key_prefix="temp")
         await redis_manager.connect()
+
+        async def get_member(id: int) -> discord.Member | None:
+            return await ctx.guild.fetch_member(id) if ctx.guild else None
+
+        async def get_user(id: int) -> discord.User | None:
+            return await self.bot.fetch_user(id)
+
+        async def get_channel(id: int) -> GuildChannel | PrivateChannel | Thread:
+            return await self.bot.fetch_channel(id)
+
+        async def get_guild(id: int) -> discord.Guild | None:
+            return await self.bot.fetch_guild(id)
+
+        async def get_message(
+            channel_id: int, message_id: int
+        ) -> discord.Message | None:
+            channel = await get_channel(channel_id)
+            if isinstance(channel, (TextChannel, Thread)):
+                return await channel.fetch_message(message_id)
+
+            return None
 
         env: dict[str, typing.Any] = {
             "__builtins__": __builtins__,
@@ -66,6 +89,11 @@ class General(commands.Cog):
             "random": random,
             "requests": requests,
             "asyncio": asyncio,
+            "get_member": get_member,
+            "get_user": get_user,
+            "get_channel": get_channel,
+            "get_guild": get_guild,
+            "get_message": get_message,
             "Meta": Meta,
             "Role": Role,
         }
@@ -110,7 +138,26 @@ class General(commands.Cog):
                 name="stdout", value=f"```py\n{stdout_output}\n```", inline=False
             )
 
-        await ctx.reply(embed=embed)
+        return embed
+
+    @commands.command(name="eval", hidden=True)
+    @eval_whitelist
+    async def eval_cmd(self, ctx: commands.Context[commands.Bot], *, code: str):
+        embed = await self._eval_helper(ctx, code)
+        response = await ctx.reply(embed=embed)
+
+        self._eval_messages[ctx.message.id] = (ctx, response)
+
+    @commands.Cog.listener()
+    async def on_message_edit(self, before: discord.Message, after: discord.Message):
+        if after.id not in self._eval_messages:
+            return
+        if after.content == before.content:
+            return
+
+        ctx, response = self._eval_messages[after.id]
+        embed = await self._eval_helper(ctx, after.content)
+        await response.edit(embed=embed)
 
 
 async def setup(bot: commands.Bot) -> None:
