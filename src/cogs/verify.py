@@ -37,19 +37,16 @@ class Verify(commands.Cog):
         except Exception as e:
             print(f"Failed to clean up OAuth: {e}")
 
-    @commands.hybrid_command(
+    @app_commands.command(
         name="verify", description="Verify yourself with your AndrewID."
     )
     @app_commands.guilds(Meta.SERVER.value)
     @app_commands.guild_only()
-    async def verify(
-        self,
-        ctx: commands.Context[commands.Bot],
-    ):
+    async def verify(self, interaction: discord.Interaction):
         guild = cast(discord.Guild, self.bot.get_guild(Meta.SERVER.value))
-        member = guild.get_member(ctx.author.id)
+        member = guild.get_member(interaction.user.id)
         if not member:
-            await ctx.reply(
+            await interaction.response.send_message(
                 content="oops! please join the server and try again.",
                 ephemeral=True,
             )
@@ -58,7 +55,7 @@ class Verify(commands.Cog):
         try:
             andrewid = await self.oauth_manager.get_andrewid(member.id)
             if andrewid:
-                await ctx.reply(
+                await interaction.response.send_message(
                     content=f"oops! you're already verified as `{andrewid}`.",
                     ephemeral=True,
                 )
@@ -67,7 +64,7 @@ class Verify(commands.Cog):
             pass
 
         view = discord.ui.View(timeout=300)
-        verification_url = self.oauth_server.get_verification_url(ctx.author.id)
+        verification_url = self.oauth_server.get_verification_url(interaction.user.id)
         oauth_button: discord.ui.Button[discord.ui.View] = discord.ui.Button(
             label="Verify with AndrewID",
             url=verification_url,
@@ -75,7 +72,7 @@ class Verify(commands.Cog):
         )
         view.add_item(oauth_button)
 
-        await ctx.reply(view=view, ephemeral=True)
+        await interaction.response.send_message(view=view, ephemeral=True)
 
     @commands.hybrid_command(
         name="unverify", description="Remove verification from a user."
