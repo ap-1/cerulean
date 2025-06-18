@@ -160,17 +160,9 @@ class General(commands.Cog):
         if ctx.command is None or ctx.command.name != "eval":
             return  # it's no longer an eval command
 
-        # extract the original response message
-        orig_ctx, response = self._eval_messages[after.id]
-
-        # reuse the updated context to pull out the argument
-        view = ctx.view
-        view.skip_ws()
-        view.get_word()  # skip the command name
-        code = view.read_rest().strip()
-
-        embed = await self._eval_helper(orig_ctx, code)
-        await response.edit(embed=embed)
+        # manually call the command again with the edited message
+        self._eval_messages[after.id] = (ctx, self._eval_messages[after.id][1])
+        await self.bot.invoke(ctx)
 
 
 async def setup(bot: commands.Bot) -> None:
