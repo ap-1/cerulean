@@ -99,12 +99,21 @@ class OAuthServer:
 
                 andrewid = email.split("@")[0]
 
-                # check if andrewid is already linked to another account
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
 
                 try:
                     loop.run_until_complete(self.oauth_manager.connect())
+
+                    # check if the andrewid is banned
+                    if loop.run_until_complete(self.oauth_manager.is_banned(andrewid)):
+                        asyncio.run_coroutine_threadsafe(
+                            self.oauth_manager.enforce_ban(self.bot, user_id, andrewid),
+                            self.bot.loop,
+                        )
+                        return self.error_page("You are banned from this server.")
+
+                    # check if andrewid is already linked to another account
                     existing_user = loop.run_until_complete(
                         self.oauth_manager.get_user_by_andrewid(andrewid)
                     )
@@ -121,7 +130,7 @@ class OAuthServer:
 
                     # complete verification in Discord
                     asyncio.run_coroutine_threadsafe(
-                        self.oauth_manager.complete_discord_verification(
+                        self.oauth_manager.complete_verification(
                             self.bot, user_id, andrewid
                         ),
                         self.bot.loop,

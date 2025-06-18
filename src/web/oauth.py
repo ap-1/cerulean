@@ -14,15 +14,13 @@ class OAuthManager(RedisManager):
         super().__init__(key_prefix="oauth")
 
     async def create_verification_session(self, user_id: int) -> str:
-        """Create a new verification session and return a state token"""
-
+        # create a new verification session and return a state token
         state = secrets.token_urlsafe(32)
         await self.set(f"session:{state}", str(user_id), ex=600)  # 10 minute expiry
+
         return state
 
     async def get_user_from_state(self, state: str) -> int | None:
-        """Get user ID from state token"""
-
         user_id_str = await self.get(f"session:{state}")
         if user_id_str:
             return int(user_id_str)
@@ -30,30 +28,45 @@ class OAuthManager(RedisManager):
         return None
 
     async def store_andrewid(self, user_id: int, andrewid: str) -> None:
-        """Store andrewid for a user"""
-
         await self.set(f"user:{user_id}", andrewid)
         await self.set(f"andrewid:{andrewid}", str(user_id))
 
     async def get_andrewid(self, user_id: int) -> str | None:
-        """Get andrewid for a user"""
-
         return await self.get(f"user:{user_id}")
 
     async def get_user_by_andrewid(self, andrewid: str) -> int | None:
-        """Get user ID by andrewid"""
-
         user_id_str = await self.get(f"andrewid:{andrewid}")
         if user_id_str:
             return int(user_id_str)
 
         return None
 
-    async def complete_discord_verification(
+    async def ban_andrewid(self, andrewid: str, reason: str) -> None:
+        await self.sadd("banned", andrewid)
+        await self.set(f"ban:{andrewid}", reason)
+
+    async def is_banned(self, andrewid: str) -> bool:
+        return await self.sismember("banned", andrewid)
+
+    async def enforce_ban(self, bot: commands.Bot, user_id: int, andrewid: str):
+        try:
+            guild = bot.get_guild(Meta.SERVER.value)
+            if not guild:
+                return
+
+            member = guild.get_member(user_id)
+            if not member:
+                return
+
+            ban_reason = await self.get(f"ban:{andrewid}")
+            await member.ban(reason=f"Andrew ID {andrewid} is banned: {ban_reason}")
+
+        except Exception as e:
+            print(f"Error enforcing ban: {e}")
+
+    async def complete_verification(
         self, bot: commands.Bot, user_id: int, andrewid: str
     ):
-        """Complete the Discord verification process"""
-
         try:
             guild = bot.get_guild(Meta.SERVER.value)
             if not guild:

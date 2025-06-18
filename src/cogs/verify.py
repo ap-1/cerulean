@@ -38,7 +38,7 @@ class Verify(commands.Cog):
             print(f"Failed to clean up OAuth: {e}")
 
     @app_commands.command(
-        name="verify", description="Verify yourself with your AndrewID."
+        name="verify", description="Verify yourself with your Andrew ID."
     )
     @app_commands.guilds(Meta.SERVER.value)
     @app_commands.guild_only()
@@ -66,7 +66,7 @@ class Verify(commands.Cog):
         view = discord.ui.View(timeout=300)
         verification_url = self.oauth_server.get_verification_url(interaction.user.id)
         oauth_button: discord.ui.Button[discord.ui.View] = discord.ui.Button(
-            label="Verify with AndrewID",
+            label="Verify with Andrew ID",
             url=verification_url,
             style=discord.ButtonStyle.link,
         )
@@ -108,8 +108,85 @@ class Verify(commands.Cog):
         except Exception as e:
             await ctx.reply(f"Error unverifying user: {str(e)}", ephemeral=True)
 
+    @commands.hybrid_command(
+        name="ban", description="Andrew ID ban either a user or an Andrew ID."
+    )
+    @app_commands.describe(
+        user="A verified Discord user to Andrew ID ban",
+        andrewid="An Andrew ID to ban future Discord users with",
+        reason="Reason for the ban",
+    )
+    @app_commands.guilds(Meta.SERVER.value)
+    @app_commands.guild_only()
+    @commands.has_any_role(Role.ADMIN.value)
+    async def ban(
+        self,
+        ctx: commands.Context[commands.Bot],
+        user: discord.Member | None,
+        andrewid: str | None,
+        reason: str = "No reason provided",
+    ):
+        try:
+            # ensure the command is used in a guild
+            if not ctx.guild or ctx.guild.id != Meta.SERVER.value:
+                await ctx.reply(
+                    "oops! this command can only be used in the server.", ephemeral=True
+                )
+                return
+
+            # ensure at least one of user or andrewid is provided
+            if not user and not andrewid:
+                await ctx.reply(
+                    "oops! you must specify either a verified user or an Andrew ID to ban.",
+                    ephemeral=True,
+                )
+                return
+
+            if user:
+                user_andrewid = await self.oauth_manager.get_andrewid(user.id)
+
+                # if user is provided, ensure they are verified
+                if not user_andrewid:
+                    await ctx.reply(
+                        f"oops! {user.mention} is not verified, so you can't ban their Andrew ID.",
+                        ephemeral=True,
+                    )
+                    return
+
+                # if both user and andrewid are provided, ensure they match
+                if andrewid and user_andrewid != andrewid:
+                    await ctx.reply(
+                        "oops! the specified user does not match the provided Andrew ID.",
+                        ephemeral=True,
+                    )
+                    return
+
+                # ban the user
+                await self.oauth_manager.ban_andrewid(user_andrewid, reason)
+                await user.ban(reason=reason)
+                await ctx.reply(f"{user.mention} (`{user_andrewid}`) has been banned.")
+            elif andrewid:
+                await self.oauth_manager.ban_andrewid(andrewid, reason)
+
+                # if someone with this Andrew ID is in the server, ban them
+                potential_user = await self.oauth_manager.get_user_by_andrewid(andrewid)
+                if potential_user:
+                    queried_user = ctx.guild.get_member(potential_user)
+
+                    if queried_user:
+                        await ctx.guild.ban(user=queried_user, reason=reason)
+                        await ctx.reply(
+                            f"{queried_user.mention} (`{andrewid}`) has been banned."
+                        )
+
+                await ctx.reply(f"`{andrewid}` has been banned.")
+
+        except Exception as e:
+            await ctx.reply(f"Error banning user: {str(e)}", ephemeral=True)
+
     @unverify.error
-    async def unverify_error(
+    @ban.error
+    async def verify_error(
         self, ctx: commands.Context[commands.Bot], error: commands.CommandError
     ):
         if isinstance(error, commands.MissingAnyRole):
