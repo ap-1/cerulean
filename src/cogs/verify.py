@@ -37,16 +37,19 @@ class Verify(commands.Cog):
         except Exception as e:
             print(f"Failed to clean up OAuth: {e}")
 
-    @app_commands.command(
+    @commands.hybrid_command(
         name="verify", description="Verify yourself with your AndrewID."
     )
     @app_commands.guilds(Meta.SERVER.value)
     @app_commands.guild_only()
-    async def verify(self, interaction: discord.Interaction):
+    async def verify(
+        self,
+        ctx: commands.Context[commands.Bot],
+    ):
         guild = cast(discord.Guild, self.bot.get_guild(Meta.SERVER.value))
-        member = guild.get_member(interaction.user.id)
+        member = guild.get_member(ctx.author.id)
         if not member:
-            await interaction.response.send_message(
+            await ctx.reply(
                 content="oops! please join the server and try again.",
                 ephemeral=True,
             )
@@ -55,7 +58,7 @@ class Verify(commands.Cog):
         try:
             andrewid = await self.oauth_manager.get_andrewid(member.id)
             if andrewid:
-                await interaction.response.send_message(
+                await ctx.reply(
                     content=f"oops! you're already verified as `{andrewid}`.",
                     ephemeral=True,
                 )
@@ -64,7 +67,7 @@ class Verify(commands.Cog):
             pass
 
         view = discord.ui.View(timeout=300)
-        verification_url = self.oauth_server.get_verification_url(interaction.user.id)
+        verification_url = self.oauth_server.get_verification_url(ctx.author.id)
         oauth_button: discord.ui.Button[discord.ui.View] = discord.ui.Button(
             label="Verify with AndrewID",
             url=verification_url,
@@ -72,22 +75,20 @@ class Verify(commands.Cog):
         )
         view.add_item(oauth_button)
 
-        await interaction.response.send_message(view=view, ephemeral=True)
+        await ctx.reply(view=view, ephemeral=True)
 
-    @app_commands.command(
+    @commands.hybrid_command(
         name="unverify", description="Remove verification from a user."
     )
     @app_commands.describe(user="The Discord user to unverify")
     @app_commands.guilds(Meta.SERVER.value)
     @commands.has_any_role(Role.ADMIN.value, Role.MOD.value)
-    async def unverify(self, interaction: discord.Interaction, user: discord.Member):
+    async def unverify(self, ctx: commands.Context[commands.Bot], user: discord.Member):
         try:
             # check if user has an andrewid
             andrewid = await self.oauth_manager.get_andrewid(user.id)
             if not andrewid:
-                await interaction.response.send_message(
-                    f"{user.mention} is not verified.", ephemeral=True
-                )
+                await ctx.reply(f"{user.mention} is not verified.", ephemeral=True)
                 return
 
             # remove andrewid from database
@@ -105,21 +106,17 @@ class Verify(commands.Cog):
             if verified_role in user.roles:
                 await user.remove_roles(verified_role)
 
-            await interaction.response.send_message(
-                f"{user.mention} has been unverified.", ephemeral=True
-            )
+            await ctx.reply(f"{user.mention} has been unverified.", ephemeral=True)
 
         except Exception as e:
-            await interaction.response.send_message(
-                f"Error unverifying user: {str(e)}", ephemeral=True
-            )
+            await ctx.reply(f"Error unverifying user: {str(e)}", ephemeral=True)
 
     @unverify.error
     async def unverify_error(
-        self, interaction: discord.Interaction, error: app_commands.AppCommandError
+        self, ctx: commands.Context[commands.Bot], error: commands.CommandError
     ):
-        if isinstance(error, app_commands.MissingAnyRole):
-            await interaction.response.send_message(
+        if isinstance(error, commands.MissingAnyRole):
+            await ctx.reply(
                 "oops! you don't have permission to use this command.", ephemeral=True
             )
 
