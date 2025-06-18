@@ -85,7 +85,7 @@ class DirectoryParser:
 
     @classmethod
     async def lookup_user(cls, andrewid: str) -> tuple[list[Role], Role | None]:
-        """Look up a user by their AndrewID and return department roles and class level role."""
+        """Look up a user by their Andrew ID and return department roles and class level role."""
         try:
             # make request to CMU directory
             params = {"search": andrewid, "action": "Search"}
