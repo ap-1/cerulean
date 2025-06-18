@@ -45,7 +45,7 @@ class Nickname(commands.Cog):
     ) -> None:
         if not ctx.guild or ctx.guild.id != Meta.SERVER.value:
             await ctx.reply(
-                "this command can only be used in the server", ephemeral=True
+                "oops! this command can only be used in the server.", ephemeral=True
             )
             return
 
