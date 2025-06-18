@@ -90,6 +90,7 @@ class General(commands.Cog):
             "__builtins__": __builtins__,
             "bot": self.bot,
             "ctx": ctx,
+            "guild": ctx.guild,
             "redis": redis_manager.redis,
             "discord": discord,
             "commands": commands,
@@ -105,12 +106,8 @@ class General(commands.Cog):
             "Meta": Meta,
         }
 
-        if ctx.guild:
-            env["guild"] = ctx.guild
-
-            for role_member in Role:
-                if role_member.value in await ctx.guild.fetch_roles():
-                    env[role_member.name] = ctx.guild.get_role(role_member.value)
+        for role_member in Role:
+            env[role_member.name] = get_role(role_member.value)
 
         original_stdout = sys.stdout
         stdout_output = ""
