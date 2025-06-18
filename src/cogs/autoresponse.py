@@ -109,7 +109,7 @@ class Autoresponse(commands.Cog):
                 name="Template", value=f"```\n{template}\n```", inline=False
             )
 
-            await ctx.reply(embed=embed, ephemeral=True)
+            await ctx.reply(embed=embed)
         except Exception as e:
             await ctx.reply(f"Error creating autoresponse: {str(e)}", ephemeral=True)
 
@@ -273,7 +273,7 @@ class Autoresponse(commands.Cog):
                 inline=False,
             )
 
-        await ctx.reply(embed=embed, ephemeral=True)
+        await ctx.reply(embed=embed)
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
