@@ -107,10 +107,12 @@ class OAuthServer:
 
                     # check if the andrewid is banned
                     if loop.run_until_complete(self.oauth_manager.is_banned(andrewid)):
-                        asyncio.run_coroutine_threadsafe(
+                        future = asyncio.run_coroutine_threadsafe(
                             self.oauth_manager.enforce_ban(self.bot, user_id, andrewid),
                             self.bot.loop,
                         )
+                        future.result()
+
                         return self.error_page("You are banned from this server.")
 
                     # check if andrewid is already linked to another account
