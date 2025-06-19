@@ -73,7 +73,7 @@ class OAuthManager(RedisManager):
                 discord.TextChannel, bot.get_channel(Meta.ADMIN_CHANNEL.value)
             )
             await admin_channel.send(
-                f"banned {member.mention} for having {andrewid} ({ban_reason})"
+                f"banned {member.mention} for having banned Andrew ID {andrewid}. original reason: {ban_reason}"
             )
 
         except Exception as e:
