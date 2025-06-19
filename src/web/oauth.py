@@ -61,6 +61,14 @@ class OAuthManager(RedisManager):
             ban_reason = await self.get(f"ban:{andrewid}")
             await member.ban(reason=f"Andrew ID {andrewid} is banned: {ban_reason}")
 
+            # log to admin channel
+            admin_channel = cast(
+                discord.TextChannel, guild.get_channel(Meta.ADMIN_CHANNEL.value)
+            )
+            await admin_channel.send(
+                f"banned {member.mention} for having {andrewid} ({ban_reason})"
+            )
+
         except Exception as e:
             print(f"Error enforcing ban: {e}")
 
