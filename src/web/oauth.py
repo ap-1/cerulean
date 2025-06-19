@@ -59,7 +59,10 @@ class OAuthManager(RedisManager):
                 return
 
             ban_reason = await self.get(f"ban:{andrewid}")
-            await member.ban(reason=f"Andrew ID {andrewid} is banned: {ban_reason}")
+            await member.ban(
+                reason=f"Andrew ID {andrewid} is banned: {ban_reason}",
+                delete_message_days=0,
+            )
 
             # log to admin channel
             admin_channel = cast(

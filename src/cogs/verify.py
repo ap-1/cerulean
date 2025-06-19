@@ -163,7 +163,7 @@ class Verify(commands.Cog):
 
                 # ban the user
                 await self.oauth_manager.ban_andrewid(user_andrewid, reason)
-                await user.ban(reason=reason)
+                await user.ban(reason=reason, delete_message_days=0)
                 await ctx.reply(f"{user.mention} (`{user_andrewid}`) has been banned.")
             elif andrewid:
                 await self.oauth_manager.ban_andrewid(andrewid, reason)
@@ -174,7 +174,9 @@ class Verify(commands.Cog):
                     queried_user = ctx.guild.get_member(potential_user)
 
                     if queried_user:
-                        await ctx.guild.ban(user=queried_user, reason=reason)
+                        await ctx.guild.ban(
+                            user=queried_user, reason=reason, delete_message_days=0
+                        )
                         await ctx.reply(
                             f"{queried_user.mention} (`{andrewid}`) has been banned."
                         )
