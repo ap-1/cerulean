@@ -48,33 +48,30 @@ class OAuthManager(RedisManager):
     async def is_banned(self, andrewid: str) -> bool:
         return await self.sismember("banned", andrewid)
 
-    async def enforce_ban(self, bot: commands.Bot, user_id: int, andrewid: str):
+    async def get_ban_reason(self, andrewid: str) -> str | None:
+        return await self.get(f"ban:{andrewid}")
+
+    async def enforce_ban(
+        self, bot: commands.Bot, user_id: int, andrewid: str, ban_reason: str
+    ):
         try:
-            admin_channel = cast(
-                discord.TextChannel, bot.get_channel(Meta.ADMIN_CHANNEL.value)
-            )
-
-            await admin_channel.send(f"{user_id} {andrewid}")
-
             guild = bot.get_guild(Meta.SERVER.value)
             if not guild:
                 return
-
-            await admin_channel.send(f"guild {guild.id}")
 
             member = guild.get_member(user_id)
             if not member:
                 return
 
-            await admin_channel.send(f"member {member.id} {member.name}")
-
-            ban_reason = await self.get(f"ban:{andrewid}")
             await member.ban(
                 reason=f"Andrew ID {andrewid} is banned: {ban_reason}",
                 delete_message_days=0,
             )
 
             # log to admin channel
+            admin_channel = cast(
+                discord.TextChannel, bot.get_channel(Meta.ADMIN_CHANNEL.value)
+            )
             await admin_channel.send(
                 f"banned {member.mention} for having {andrewid} ({ban_reason})"
             )
