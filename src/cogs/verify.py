@@ -180,6 +180,7 @@ class Verify(commands.Cog):
                         await ctx.reply(
                             f"{queried_user.mention} (`{andrewid}`) has been banned."
                         )
+                        return
 
                 await ctx.reply(f"`{andrewid}` has been banned.")
 
