@@ -124,8 +124,10 @@ class Verify(commands.Cog):
         ctx: commands.Context[commands.Bot],
         user: discord.Member | None,
         andrewid: str | None,
-        reason: str = "No reason provided",
+        reason: str | None,
     ):
+        reason = reason or "No reason provided"
+
         try:
             # ensure the command is used in a guild
             if not ctx.guild or ctx.guild.id != Meta.SERVER.value:

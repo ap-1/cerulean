@@ -116,7 +116,7 @@ class OAuthServer:
                                 self.bot,
                                 user_id,
                                 andrewid,
-                                ban_reason or "No reason provided.",
+                                ban_reason or "No reason provided",
                             ),
                             self.bot.loop,
                         )
