@@ -45,7 +45,9 @@ class Messages(commands.Cog):
         progress_message = await ctx.reply(embed=progress_embed)
 
         async def process_batch():
+            print("Processing batch of messages")
             with db_session:
+                print(f"Buffer size: {len(buffer)}")
                 for msg in buffer:
                     index_message_sync(msg)
                     print("Indexed message:", msg.id)
