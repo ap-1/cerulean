@@ -45,31 +45,24 @@ class Messages(commands.Cog):
         progress_message = await ctx.reply(embed=progress_embed)
 
         async def process_batch():
-            print("Processing batch of messages")
-            with db_session:
-                print(f"Buffer size: {len(buffer)}")
-                for msg in buffer:
-                    index_message_sync(msg)
-                    print("Indexed message:", msg.id)
+            for msg in buffer:
+                index_message_sync(msg)
+                print("Indexed message:", msg.id)
 
             buffer.clear()
-            print("Processed batch of messages")
 
             progress_bar = render_progress_bar(processed, count)
             progress_embed.description = f"{progress_bar}\n{processed}/{count} messages"
             progress_embed.set_footer(text=f"Elapsed: {int(time.time() - start_time)}s")
 
             await progress_message.edit(embed=progress_embed)
-            print(f"Updated embed: {processed}/{count}")
 
         # process messages in batches
         async for message in channel.history(limit=limit, oldest_first=True):
-            print(f"Processing message {processed + 1}: {message.id}")
             buffer.append(message)
             processed += 1
 
             if len(buffer) >= BATCH_SIZE:
-                print("Reached batch size, processing batch")
                 await process_batch()
 
         # process remaining messages

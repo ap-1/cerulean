@@ -1,4 +1,5 @@
 import discord
+from pony.orm import db_session
 
 from utils.messages.models import Mention, Message
 
@@ -13,6 +14,7 @@ def render_progress_bar(current: int, total: int, bar_length: int = 20) -> str:
     return f"[{bar}] {int(percent * 100)}%"
 
 
+@db_session
 def index_message_sync(message: discord.Message):
     # thread + channel logic
     if isinstance(message.channel, discord.Thread):
