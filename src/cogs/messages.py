@@ -6,44 +6,12 @@ from discord.ext import commands
 from pony.orm import db_session
 
 from utils.ids import Meta, Role
-from utils.messages.models import Mention, Message
-from utils.messages.utils import render_progress_bar
+from utils.messages.utils import index_message_sync, render_progress_bar
 
 
 class Messages(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot: commands.Bot = bot
-
-    async def index_message(self, message: discord.Message):
-        # thread + channel logic
-        if isinstance(message.channel, discord.Thread):
-            thread_id = message.channel.id
-            channel_id = message.channel.parent_id
-        else:
-            thread_id = None
-            channel_id = message.channel.id
-
-        reply_id = (
-            message.reference.message_id  # ty: ignore[possibly-unbound-attribute]
-            if message.reference
-            else None
-        )
-        mentioned_ids = [user.id for user in message.mentions]
-
-        if not Message.exists(message_id=message.id):
-            db_msg = Message(
-                message_id=message.id,
-                author_id=message.author.id,
-                is_bot=message.author.bot,
-                channel_id=channel_id,
-                thread_id=thread_id,
-                content=message.content,
-                timestamp=message.created_at,
-                reply_to=reply_id,
-            )
-
-            for uid in mentioned_ids:
-                Mention(mentioned_user_id=uid, message=db_msg)
 
     @commands.hybrid_command(name="index", description="Index a channel's messages")
     @app_commands.describe(
@@ -62,6 +30,9 @@ class Messages(commands.Cog):
         start_time = time.time()
         processed = 0
 
+        BATCH_SIZE = 100
+        buffer: list[discord.Message] = []
+
         progress_embed = discord.Embed(
             title=f"Indexing {channel.name}",
             description="Starting...",
@@ -77,13 +48,17 @@ class Messages(commands.Cog):
 
             await progress_message.edit(embed=progress_embed)
 
-        with db_session:
-            async for message in channel.history(limit=None, oldest_first=True):
-                await self.index_message(message)
-                processed += 1
+        async for message in channel.history(limit=None, oldest_first=True):
+            buffer.append(message)
+            processed += 1
 
-                if processed % 100 == 0:
-                    await update_embed()
+            if len(buffer) >= BATCH_SIZE:
+                with db_session:
+                    index_message_sync(message)
+                    processed += 1
+
+                buffer.clear()
+                await update_embed()
 
         progress_embed.description = f"Done! Indexed {processed} messages."
         progress_embed.color = discord.Color.green()
@@ -106,7 +81,7 @@ class Messages(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         with db_session:
-            await self.index_message(message)
+            index_message_sync(message)
 
         await self.bot.process_commands(message)
 
