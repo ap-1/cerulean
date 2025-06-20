@@ -309,8 +309,6 @@ class Autoresponse(commands.Cog):
                         except discord.HTTPException:
                             pass
 
-        await self.bot.process_commands(message)
-
     @create_autoresponse.error
     @delete_autoresponse.error
     @set_probability.error
