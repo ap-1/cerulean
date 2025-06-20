@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from typing import final
 
-from pony.orm import Database, Optional, PrimaryKey, Required, Set
+from pony.orm import Database, Optional, PrimaryKey, Required, Set, sql_debug
 
 user = os.getenv("PGUSER")
 password = os.getenv("PGPASSWORD")
@@ -24,6 +24,7 @@ db.bind(
     port=port,
     database=database,
 )
+sql_debug(True)
 
 
 @final
