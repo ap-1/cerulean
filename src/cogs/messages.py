@@ -3,7 +3,6 @@ import time
 import discord
 from discord import app_commands
 from discord.ext import commands
-from pony.orm import db_session
 
 from utils.ids import Meta, Role
 from utils.messages.utils import index_message_sync, render_progress_bar
@@ -89,8 +88,7 @@ class Messages(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        with db_session:
-            index_message_sync(message)
+        index_message_sync(message)
 
         await self.bot.process_commands(message)
 
