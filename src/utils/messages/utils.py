@@ -15,6 +15,12 @@ def render_progress_bar(current: int, total: int, bar_length: int = 20) -> str:
 
 
 @db_session
+def index_messages_sync(messages: list[discord.Message]):
+    for message in messages:
+        index_message_sync(message)
+
+
+@db_session
 def index_message_sync(message: discord.Message):
     # thread + channel logic
     if isinstance(message.channel, discord.Thread):

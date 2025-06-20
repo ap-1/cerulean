@@ -8,7 +8,6 @@ from pony.orm import (
     PrimaryKey,
     Required,
     Set,
-    db_session,
     sql_debug,
 )
 
@@ -55,13 +54,3 @@ class Mention(db.Entity):
 
 
 db.generate_mapping(create_tables=True)
-
-
-@db_session
-def test():
-    print("About to run select")
-    print(Message.select().count())
-    print("Select finished")
-
-
-test()
