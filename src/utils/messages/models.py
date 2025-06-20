@@ -8,7 +8,6 @@ from pony.orm import (
     PrimaryKey,
     Required,
     Set,
-    db_session,
     sql_debug,
 )
 
@@ -54,5 +53,4 @@ class Mention(db.Entity):
     message = Required(Message)
 
 
-with db_session:
-    db.generate_mapping(create_tables=True)
+db.generate_mapping(create_tables=True)
