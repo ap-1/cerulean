@@ -38,7 +38,7 @@ class Message(db.Entity):
     content = Required(str)
     timestamp = Required(datetime)
     reply_to = Optional(int)
-    mentions: Set["Mention"] = Set("Mention")
+    mentions = Set("Mention")  # pyright: ignore[reportUnknownVariableType]
 
 
 @final
