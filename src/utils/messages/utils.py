@@ -24,16 +24,12 @@ def index_message_sync(message: discord.Message):
         thread_id = None
         channel_id = message.channel.id
 
-    print("About to access message attributes")
-
     reply_id = (
         message.reference.message_id  # ty: ignore[possibly-unbound-attribute]
         if message.reference
         else None
     )
     mentioned_ids = [user.id for user in message.mentions]
-
-    print("About to run DB query")
 
     if not Message.exists(message_id=message.id):
         print("Creating new Message entry for", message.id)

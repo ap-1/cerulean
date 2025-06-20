@@ -2,7 +2,15 @@ import os
 from datetime import datetime
 from typing import final
 
-from pony.orm import Database, Optional, PrimaryKey, Required, Set, sql_debug
+from pony.orm import (
+    Database,
+    Optional,
+    PrimaryKey,
+    Required,
+    Set,
+    db_session,
+    sql_debug,
+)
 
 user = os.getenv("PGUSER")
 password = os.getenv("PGPASSWORD")
@@ -47,3 +55,13 @@ class Mention(db.Entity):
 
 
 db.generate_mapping(create_tables=True)
+
+
+@db_session
+def test():
+    print("About to run select")
+    print(Message.select().count())
+    print("Select finished")
+
+
+test()
