@@ -108,3 +108,7 @@ class Messages(commands.Cog):
             await self.index_message(message)
 
         await self.bot.process_commands(message)
+
+
+async def setup(bot: commands.Bot) -> None:
+    await bot.add_cog(Messages(bot))
