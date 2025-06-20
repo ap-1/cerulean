@@ -44,7 +44,15 @@ class Messages(commands.Cog):
         progress_embed.set_footer(text="Elapsed: 0s")
         progress_message = await ctx.reply(embed=progress_embed)
 
-        async def update_embed():
+        async def process_batch():
+            with db_session:
+                for msg in buffer:
+                    index_message_sync(msg)
+                    print("Indexed message:", msg.id)
+
+            buffer.clear()
+            print("Processed batch of messages")
+
             progress_bar = render_progress_bar(processed, count)
             progress_embed.description = f"{progress_bar}\n{processed}/{count} messages"
             progress_embed.set_footer(text=f"Elapsed: {int(time.time() - start_time)}s")
@@ -52,23 +60,19 @@ class Messages(commands.Cog):
             await progress_message.edit(embed=progress_embed)
             print(f"Updated embed: {processed}/{count}")
 
-        test_messages: list[discord.Message] = []
-        async for msg in channel.history(limit=5):
-            test_messages.append(msg)
-        print(f"Successfully retrieved {len(test_messages)} test messages")
-
+        # process messages in batches
         async for message in channel.history(limit=limit, oldest_first=True):
             print(f"Processing message {processed + 1}: {message.id}")
             buffer.append(message)
             processed += 1
 
             if len(buffer) >= BATCH_SIZE:
-                with db_session:
-                    index_message_sync(message)
-                    processed += 1
+                print("Reached batch size, processing batch")
+                await process_batch()
 
-                buffer.clear()
-                await update_embed()
+        # process remaining messages
+        if buffer:
+            await process_batch()
 
         progress_embed.description = f"Done! Indexed {processed} messages."
         progress_embed.color = discord.Color.green()
