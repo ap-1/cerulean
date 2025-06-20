@@ -17,6 +17,7 @@ class Messages(commands.Cog):
     @app_commands.describe(
         channel="Channel to index",
         count="Approximate number of messages for progress bar",
+        limit="Optional limit for the number of messages to index (default: all)",
     )
     @app_commands.guilds(Meta.SERVER.value)
     @commands.has_any_role(Role.ADMIN.value)
@@ -25,10 +26,12 @@ class Messages(commands.Cog):
         ctx: commands.Context[commands.Bot],
         channel: discord.TextChannel,
         count: int,
+        limit: int | None = None,
     ):
         await ctx.defer()
         start_time = time.time()
         processed = 0
+        count = min(count, limit) if limit is not None else count
 
         BATCH_SIZE = 100
         buffer: list[discord.Message] = []
@@ -47,8 +50,15 @@ class Messages(commands.Cog):
             progress_embed.set_footer(text=f"Elapsed: {int(time.time() - start_time)}s")
 
             await progress_message.edit(embed=progress_embed)
+            print(f"Updated embed: {processed}/{count}")
 
-        async for message in channel.history(limit=None, oldest_first=True):
+        test_messages: list[discord.Message] = []
+        async for msg in channel.history(limit=5):
+            test_messages.append(msg)
+        print(f"Successfully retrieved {len(test_messages)} test messages")
+
+        async for message in channel.history(limit=limit, oldest_first=True):
+            print(f"Processing message {processed + 1}: {message.id}")
             buffer.append(message)
             processed += 1
 
