@@ -5,7 +5,7 @@ from discord import app_commands
 from discord.ext import commands
 from pony.orm import db_session
 
-from utils.ids import Role
+from utils.ids import Meta, Role
 from utils.messages.models import Mention, Message
 from utils.messages.utils import render_progress_bar
 
@@ -50,6 +50,7 @@ class Messages(commands.Cog):
         channel="Channel to index",
         count="Approximate number of messages for progress bar",
     )
+    @app_commands.guilds(Meta.SERVER.value)
     @commands.has_any_role(Role.ADMIN.value)
     async def index(
         self,
