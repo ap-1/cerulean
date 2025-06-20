@@ -16,6 +16,8 @@ def render_progress_bar(current: int, total: int, bar_length: int = 20) -> str:
 
 @db_session
 def index_message_sync(message: discord.Message):
+    print(f"Entered index_message_sync for {message.id}")
+
     # thread + channel logic
     if isinstance(message.channel, discord.Thread):
         thread_id = message.channel.id
@@ -32,6 +34,7 @@ def index_message_sync(message: discord.Message):
     mentioned_ids = [user.id for user in message.mentions]
 
     if not Message.exists(message_id=message.id):
+        print("Creating new Message entry for", message.id)
         db_msg = Message(
             message_id=message.id,
             author_id=message.author.id,
@@ -43,5 +46,8 @@ def index_message_sync(message: discord.Message):
             reply_to=reply_id,
         )
 
+        print("Created Message entry:", db_msg)
         for uid in mentioned_ids:
             Mention(mentioned_user_id=uid, message=db_msg)
+
+        print("Added mentions for message", message.id)
