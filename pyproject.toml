@@ -12,6 +12,7 @@ dependencies = [
     "flask>=3.1.1",
     "lxml>=5.4.0",
     "mcstatus>=12.0.1",
+    "pony>=0.7.19",
     "python-dotenv>=1.0.1",
     "redis>=5.2.1",
     "requests>=2.32.3",
@@ -20,5 +21,6 @@ dependencies = [
 [dependency-groups]
 dev = [
     "lxml-stubs>=0.5.1",
+    "pony-stubs>=0.5.2",
     "ruff>=0.11.0",
 ]
