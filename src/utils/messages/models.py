@@ -1,21 +1,19 @@
 import os
 from datetime import datetime
 from typing import final
-from urllib.parse import urlparse
 
 from pony.orm import Database, Optional, PrimaryKey, Required, Set
 
-database_url = os.getenv("DATABASE_URL")
-if database_url is None:
-    raise ValueError("DATABASE_URL environment variable not set")
+user = os.getenv("PGUSER")
+password = os.getenv("PGPASSWORD")
+host = os.getenv("PGHOST")
+port = os.getenv("PGPORT")
+database = os.getenv("PGDATABASE")
 
-result = urlparse(database_url)
-
-user = result.username
-password = result.password
-host = result.hostname
-port = result.port
-database = result.path.lstrip("/")
+if not all([user, password, host, port, database]):
+    raise ValueError(
+        "One or more required PostgreSQL environment variables are not set"
+    )
 
 db = Database()
 db.bind(
