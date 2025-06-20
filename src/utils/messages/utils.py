@@ -14,7 +14,6 @@ def render_progress_bar(current: int, total: int, bar_length: int = 20) -> str:
     return f"[{bar}] {int(percent * 100)}%"
 
 
-@db_session
 def index_messages_sync(messages: list[discord.Message]):
     for message in messages:
         index_message_sync(message)
