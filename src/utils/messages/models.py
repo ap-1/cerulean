@@ -36,11 +36,11 @@ sql_debug(True)
 
 @final
 class Message(db.Entity):
-    message_id = PrimaryKey(int)
-    author_id = Required(int)
+    message_id = PrimaryKey(int, size=64)
+    author_id = Required(int, size=64)
     is_bot = Required(bool)
-    channel_id = Required(int)
-    thread_id = Optional(int)
+    channel_id = Required(int, size=64)
+    thread_id = Optional(int, size=64)
     content = Required(str)
     timestamp = Required(datetime)
     reply_to = Optional(int)
