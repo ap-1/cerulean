@@ -1,3 +1,4 @@
+import asyncio
 import time
 
 import discord
@@ -5,11 +6,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from utils.ids import Meta, Role
-from utils.messages.utils import (
-    index_message_sync,
-    index_messages_sync,
-    render_progress_bar,
-)
+from utils.messages.utils import index_messages_sync, render_progress_bar
 
 
 class Messages(commands.Cog):
@@ -48,7 +45,7 @@ class Messages(commands.Cog):
         progress_message = await ctx.reply(embed=progress_embed)
 
         async def process_batch():
-            index_messages_sync(buffer)
+            await asyncio.to_thread(index_messages_sync, buffer)
             buffer.clear()
 
             progress_bar = render_progress_bar(processed, count)
@@ -89,8 +86,7 @@ class Messages(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        index_message_sync(message)
-
+        await asyncio.to_thread(index_messages_sync, [message])
         await self.bot.process_commands(message)
 
 
