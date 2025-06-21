@@ -4,7 +4,6 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from src.utils.messages.models import initialize_database
 from utils.ids import Meta, Role
 from utils.messages.utils import (
     index_message_sync,
@@ -16,8 +15,6 @@ from utils.messages.utils import (
 class Messages(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot: commands.Bot = bot
-
-        initialize_database()
 
     @commands.hybrid_command(name="index", description="Index a channel's messages")
     @app_commands.describe(

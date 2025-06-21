@@ -53,5 +53,4 @@ class Mention(db.Entity):
     message = Required(Message)
 
 
-def initialize_database():
-    db.generate_mapping(create_tables=True)
+db.generate_mapping(create_tables=True)
