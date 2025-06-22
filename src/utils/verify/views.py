@@ -7,7 +7,7 @@ from utils.ids import Meta
 from web.server import OAuthServer
 
 
-class VerifyButton(discord.ui.Button[discord.ui.View]):
+class VerifyButton(discord.ui.Button[discord.ui.LayoutView]):
     def __init__(self, oauth_server: OAuthServer):
         super().__init__(
             label="Verify", style=discord.ButtonStyle.primary, custom_id="verify_button"
