@@ -8,7 +8,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "authlib>=1.6.0",
-    "discord-py>=2.5.2",
+    "discord-py",
     "flask>=3.1.1",
     "lxml>=5.4.0",
     "mcstatus>=12.0.1",
@@ -25,3 +25,6 @@ dev = [
     "pony-stubs>=0.5.2",
     "ruff>=0.11.0",
 ]
+
+[tool.uv.sources]
+discord-py = { git = "https://github.com/Rapptz/discord.py.git", rev = "0342becc756d3e28305e26a5707b54515e06b1ee" }

@@ -6,6 +6,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from utils.ids import Meta, Role
+from utils.verify.views import VerifyButton, VerifyLayoutView
 from web.oauth import OAuthManager
 from web.server import OAuthServer
 
@@ -18,12 +19,16 @@ class Verify(commands.Cog):
             bot, int(os.getenv("PORT", default=8080))
         )
 
+        self.verification_layout: VerifyLayoutView = VerifyLayoutView(self.oauth_server)
         self.bot.loop.create_task(self._init_oauth())
 
     async def _init_oauth(self) -> None:
         try:
             await self.oauth_manager.connect()
             self.oauth_server.start_server()
+
+            self.bot.add_view(self.verification_layout)
+
             print("Started OAuth server")
         except Exception as e:
             print(f"Failed to start OAuth server: {e}")
@@ -36,6 +41,24 @@ class Verify(commands.Cog):
             await self.oauth_manager.close()
         except Exception as e:
             print(f"Failed to clean up OAuth: {e}")
+
+    @commands.hybrid_command(
+        name="setup_verification",
+        description="Set up the persistent verification message.",
+    )
+    @app_commands.guilds(Meta.SERVER.value)
+    @commands.is_owner()
+    async def setup_verification(self, ctx: commands.Context[commands.Bot]):
+        for item in self.verification_layout.container.children:
+            # check if the verification button already exists
+            if isinstance(item, VerifyButton):
+                await ctx.send(
+                    "oops! the verification button is already set up.",
+                    ephemeral=True,
+                )
+                break
+        else:
+            await ctx.send(view=self.verification_layout)
 
     @app_commands.command(
         name="verify", description="Verify yourself with your Andrew ID."
@@ -189,12 +212,13 @@ class Verify(commands.Cog):
         except Exception as e:
             await ctx.reply(f"Error banning user: {str(e)}", ephemeral=True)
 
+    @setup_verification.error
     @unverify.error
     @ban.error
     async def verify_error(
         self, ctx: commands.Context[commands.Bot], error: commands.CommandError
     ):
-        if isinstance(error, commands.MissingAnyRole):
+        if isinstance(error, commands.CheckFailure):
             await ctx.reply(
                 "oops! you don't have permission to use this command.", ephemeral=True
             )
