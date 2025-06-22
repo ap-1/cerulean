@@ -49,16 +49,7 @@ class Verify(commands.Cog):
     @app_commands.guilds(Meta.SERVER.value)
     @commands.is_owner()
     async def setup_verification(self, ctx: commands.Context[commands.Bot]):
-        for item in self.verification_layout.container.children:
-            # check if the verification button already exists
-            if isinstance(item, VerifyButton):
-                await ctx.send(
-                    "oops! the verification button is already set up.",
-                    ephemeral=True,
-                )
-                break
-        else:
-            await ctx.send(view=self.verification_layout)
+        await ctx.send(view=self.verification_layout)
 
     @app_commands.command(
         name="verify", description="Verify yourself with your Andrew ID."
