@@ -92,4 +92,6 @@ class VerifyContainer(discord.ui.Container[discord.ui.LayoutView]):
 class VerifyLayoutView(discord.ui.LayoutView):
     def __init__(self, oauth_server: OAuthServer):
         super().__init__(timeout=None)  # persistent view
-        self.add_item(VerifyContainer(oauth_server))
+
+        self.container: VerifyContainer = VerifyContainer(oauth_server)
+        self.add_item(self.container)

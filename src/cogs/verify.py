@@ -6,7 +6,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from utils.ids import Meta, Role
-from utils.verify.views import VerifyButton, VerifyLayoutView
+from utils.verify.views import VerifyLayoutView
 from web.oauth import OAuthManager
 from web.server import OAuthServer
 
