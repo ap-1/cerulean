@@ -80,6 +80,11 @@ class VerifyContainer(discord.ui.Container[discord.ui.LayoutView]):
             )
         )
         self.add_item(discord.ui.Separator(row=5))
+
+        action_row: discord.ui.ActionRow[discord.ui.LayoutView] = discord.ui.ActionRow()
+        action_row.add_item(VerifyButton(oauth_server))
+        self.add_item(action_row)
+
         self.add_item(VerifyButton(oauth_server))
         self.add_item(
             discord.ui.TextDisplay(
