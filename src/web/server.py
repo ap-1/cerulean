@@ -33,9 +33,12 @@ BASE_HTML = """
 
 
 class OAuthServer:
-    def __init__(self, bot: commands.Bot, port: int = 8080):
+    def __init__(
+        self, bot: commands.Bot, oauth_manager: OAuthManager, port: int = 8080
+    ):
         self.bot: commands.Bot = bot
-        self.oauth_manager: OAuthManager = OAuthManager()
+        self.oauth_manager: OAuthManager = oauth_manager
+
         self.app: Flask = Flask(__name__)
         self.app.wsgi_app = ProxyFix(self.app.wsgi_app, x_proto=1, x_host=1)
         self.app.secret_key = os.getenv("FLASK_SECRET_KEY", secrets.token_urlsafe(32))
@@ -103,8 +106,6 @@ class OAuthServer:
                 asyncio.set_event_loop(loop)
 
                 try:
-                    loop.run_until_complete(self.oauth_manager.connect())
-
                     # check if the andrewid is banned
                     if loop.run_until_complete(self.oauth_manager.is_banned(andrewid)):
                         ban_reason = loop.run_until_complete(
