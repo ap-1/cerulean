@@ -8,7 +8,7 @@ from typing import Any
 
 from authlib.integrations.flask_client import OAuth
 from discord.ext import commands
-from flask import Flask, redirect, url_for
+from flask import Flask, redirect, request, url_for
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.serving import BaseWSGIServer, make_server
 
@@ -89,11 +89,8 @@ class OAuthServer:
         @self.app.route("/oauth/callback")
         def oauth_callback():
             try:
-                # exchange code for token
-                token = self.google.authorize_access_token()
-
                 # get user_id from Redis using state token from OAuth response
-                state = token.get("state")
+                state = request.args.get("state")
                 if not state:
                     return self.error_page("Invalid or missing OAuth state.")
 
@@ -111,7 +108,10 @@ class OAuthServer:
                 if user_id is None:
                     return self.error_page("Invalid or expired verification session.")
 
+                # exchange code for token
+                token = self.google.authorize_access_token()
                 user_info = token.get("userinfo")
+
                 if not user_info:
                     return self.error_page("Failed to get user information.")
 
