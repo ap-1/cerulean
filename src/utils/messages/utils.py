@@ -107,39 +107,51 @@ async def index_messages(messages: list[discord.Message]):
 
     # do all database operations synchronously
     with db_session:
+        msg_ids = [data.message_id for data in message_data]
+        existing_msgs = {
+            m.message_id for m in Message.select(lambda m: m.message_id in msg_ids)
+        }
+
         for data in message_data:
             try:
-                if not Message.exists(message_id=data.message_id):
-                    db_msg = Message(
-                        message_id=data.message_id,
-                        author_id=data.author_id,
-                        is_bot=data.is_bot,
-                        channel_id=data.channel_id,
-                        thread_id=data.thread_id,
-                        content=data.content,
-                        timestamp=data.timestamp,
-                        reply_to=data.reply_to,
-                    )
+                if data.message_id in existing_msgs:
+                    continue
 
-                    for uid in data.mentioned_ids:
-                        Mention(mentioned_user_id=uid, message=db_msg)
+                db_msg = Message(
+                    message_id=data.message_id,
+                    author_id=data.author_id,
+                    is_bot=data.is_bot,
+                    channel_id=data.channel_id,
+                    thread_id=data.thread_id,
+                    content=data.content,
+                    timestamp=data.timestamp,
+                    reply_to=data.reply_to,
+                )
 
-                    for reaction_data in data.reactions:
-                        for user_id in reaction_data.users:
-                            if not Reaction.exists(
+                for uid in data.mentioned_ids:
+                    Mention(mentioned_user_id=uid, message=db_msg)
+
+                # load all reactions for the message
+                existing_reactions = {
+                    (r.user_id, r.emoji_id, r.emoji_unicode)
+                    for r in Reaction.select(lambda r: r.message == db_msg)
+                }
+
+                for reaction_data in data.reactions:
+                    for user_id in reaction_data.users:
+                        if (
+                            user_id,
+                            reaction_data.emoji_id,
+                            reaction_data.emoji_unicode,
+                        ) not in existing_reactions:
+                            Reaction(
                                 message=db_msg,
                                 user_id=user_id,
                                 emoji_id=reaction_data.emoji_id,
                                 emoji_unicode=reaction_data.emoji_unicode,
-                            ):
-                                Reaction(
-                                    message=db_msg,
-                                    user_id=user_id,
-                                    emoji_id=reaction_data.emoji_id,
-                                    emoji_unicode=reaction_data.emoji_unicode,
-                                    # use the message timestamp for old reactions
-                                    timestamp=data.timestamp,
-                                )
+                                # use the message timestamp for old reactions
+                                timestamp=data.timestamp,
+                            )
             except Exception as e:
                 import traceback
 
