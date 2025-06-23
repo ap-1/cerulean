@@ -57,7 +57,7 @@ class Reaction(db.Entity):
     emoji_id = Optional(int, size=64)  # null for Unicode emojis
     emoji_unicode = Optional(str)  # null for custom emojis
 
-    timestamp = Required(datetime, default=datetime.now)
+    timestamp = Required(datetime)
 
     # ensure a user can only react once per emoji per message
     composite_key(message, user_id, emoji_id, emoji_unicode)
