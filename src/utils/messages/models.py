@@ -9,7 +9,6 @@ from pony.orm import (
     Required,
     Set,
     composite_key,
-    sql_debug,
 )
 
 user = os.getenv("PGUSER")
@@ -32,7 +31,6 @@ db.bind(
     port=port,
     database=database,
 )
-sql_debug(True)
 
 
 @final
