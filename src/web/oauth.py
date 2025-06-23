@@ -20,6 +20,9 @@ class OAuthManager(RedisManager):
 
         return state
 
+    async def delete_verification_session(self, state: str) -> None:
+        await self.delete(f"session:{state}")
+
     async def get_user_from_state(self, state: str) -> int | None:
         user_id_str = await self.get(f"session:{state}")
         if user_id_str:

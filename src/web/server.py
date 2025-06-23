@@ -8,7 +8,7 @@ from typing import Any
 
 from authlib.integrations.flask_client import OAuth
 from discord.ext import commands
-from flask import Flask, redirect, session, url_for
+from flask import Flask, redirect, url_for
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.serving import BaseWSGIServer, make_server
 
@@ -72,27 +72,48 @@ class OAuthServer:
 
         @self.app.route("/oauth/login/<int:user_id>")
         def oauth_login(user_id: int):
-            # store user_id in session as state
-            session["user_id"] = user_id
-            session["state"] = secrets.token_urlsafe(32)
+            # store user_id in Redis using a generated state token
+            state_future = asyncio.run_coroutine_threadsafe(
+                self.oauth_manager.create_verification_session(user_id),
+                self.bot.loop,
+            )
+
+            try:
+                state = state_future.result(timeout=5)
+            except TimeoutError:
+                return self.error_page("Internal timeout during login setup.")
 
             redirect_uri = url_for("oauth_callback", _external=True)
-            return self.google.authorize_redirect(redirect_uri)
+            return self.google.authorize_redirect(redirect_uri, state=state)
 
         @self.app.route("/oauth/callback")
         def oauth_callback():
             try:
-                # get user_id from session
-                user_id = session.get("user_id")
-                if not user_id:
-                    return self.error_page("Invalid verification session")
-
                 # exchange code for token
                 token = self.google.authorize_access_token()
-                user_info = token.get("userinfo")
 
+                # get user_id from Redis using state token from OAuth response
+                state = token.get("state")
+                if not state:
+                    return self.error_page("Invalid or missing OAuth state.")
+
+                user_id_future = asyncio.run_coroutine_threadsafe(
+                    self.oauth_manager.get_user_from_state(state), self.bot.loop
+                )
+                user_id = user_id_future.result()
+
+                # delete state token to prevent replay attacks
+                asyncio.run_coroutine_threadsafe(
+                    self.oauth_manager.delete_verification_session(state),
+                    self.bot.loop,
+                )
+
+                if user_id is None:
+                    return self.error_page("Invalid or expired verification session.")
+
+                user_info = token.get("userinfo")
                 if not user_info:
-                    return self.error_page("Failed to get user information")
+                    return self.error_page("Failed to get user information.")
 
                 email = user_info.get("email", "").lower()
 
@@ -166,8 +187,6 @@ class OAuthServer:
         )
 
     def error_page(self, message: str):
-        session.clear()
-
         return BASE_HTML.format(status="Error", message=message)
 
     def start_server(self, host: str = "0.0.0.0"):
