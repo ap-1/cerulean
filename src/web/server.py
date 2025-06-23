@@ -102,53 +102,54 @@ class OAuthServer:
 
                 andrewid = email.split("@")[0]
 
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
+                # check if the andrewid is banned
+                is_banned_future = asyncio.run_coroutine_threadsafe(
+                    self.oauth_manager.is_banned(andrewid), self.bot.loop
+                )
+                is_banned = is_banned_future.result()
 
-                try:
-                    # check if the andrewid is banned
-                    if loop.run_until_complete(self.oauth_manager.is_banned(andrewid)):
-                        ban_reason = loop.run_until_complete(
-                            self.oauth_manager.get_ban_reason(andrewid)
-                        )
-
-                        future = asyncio.run_coroutine_threadsafe(
-                            self.oauth_manager.enforce_ban(
-                                self.bot,
-                                user_id,
-                                andrewid,
-                                ban_reason or "No reason provided",
-                            ),
-                            self.bot.loop,
-                        )
-                        future.result()
-
-                        return self.error_page("You are banned from this server.")
-
-                    # check if andrewid is already linked to another account
-                    existing_user = loop.run_until_complete(
-                        self.oauth_manager.get_user_by_andrewid(andrewid)
+                if is_banned:
+                    ban_reason_future = asyncio.run_coroutine_threadsafe(
+                        self.oauth_manager.get_ban_reason(andrewid), self.bot.loop
                     )
+                    ban_reason = ban_reason_future.result()
 
-                    if existing_user and existing_user != user_id:
-                        return self.error_page(
-                            "This CMU email is already linked to another Discord account."
-                        )
-
-                    # store the andrewid
-                    loop.run_until_complete(
-                        self.oauth_manager.store_andrewid(user_id, andrewid)
-                    )
-
-                    # complete verification in Discord
                     asyncio.run_coroutine_threadsafe(
-                        self.oauth_manager.complete_verification(
-                            self.bot, user_id, andrewid
+                        self.oauth_manager.enforce_ban(
+                            self.bot,
+                            user_id,
+                            andrewid,
+                            ban_reason or "No reason provided",
                         ),
                         self.bot.loop,
                     )
-                finally:
-                    loop.close()
+
+                    return self.error_page("You are banned from this server.")
+
+                # check if andrewid is already linked to another account
+                existing_user_future = asyncio.run_coroutine_threadsafe(
+                    self.oauth_manager.get_user_by_andrewid(andrewid), self.bot.loop
+                )
+                existing_user = existing_user_future.result()
+
+                if existing_user and existing_user != user_id:
+                    return self.error_page(
+                        "This CMU email is already linked to another Discord account."
+                    )
+
+                # store the andrewid
+                asyncio.run_coroutine_threadsafe(
+                    self.oauth_manager.store_andrewid(user_id, andrewid),
+                    self.bot.loop,
+                )
+
+                # complete verification in Discord
+                asyncio.run_coroutine_threadsafe(
+                    self.oauth_manager.complete_verification(
+                        self.bot, user_id, andrewid
+                    ),
+                    self.bot.loop,
+                )
 
                 return self.success_page(andrewid)
 
