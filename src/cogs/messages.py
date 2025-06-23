@@ -33,6 +33,7 @@ class Messages(commands.Cog):
         count: int,
         limit: int | None = None,
     ):
+        await interaction.response.defer(thinking=True)
         asyncio.create_task(self._run_index(interaction, channel, count, limit))
 
     async def _run_index(
