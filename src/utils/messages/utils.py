@@ -185,3 +185,17 @@ async def index_reaction(
             )
             if r:
                 r.delete()
+
+
+async def index_edited_message(message: discord.Message):
+    with db_session:
+        db_msg = Message.get(message_id=message.id)
+        if not db_msg:
+            return  # message is not indexed, ignore edit
+
+        db_msg.content = message.content
+
+        # re-index mentions
+        Mention.select(lambda m: m.message == db_msg).delete(bulk=True)
+        for user in message.mentions:
+            Mention(mentioned_user_id=user.id, message=db_msg)

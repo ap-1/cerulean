@@ -89,6 +89,10 @@ class Messages(commands.Cog):
         await self.bot.process_commands(message)
 
     @commands.Cog.listener()
+    async def on_message_edit(self, _: discord.Message, after: discord.Message):
+        await index_edited_message(after)
+
+    @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         await index_reaction(
             message_id=payload.message_id,
