@@ -25,15 +25,20 @@ class VerifyButton(discord.ui.Button[discord.ui.LayoutView]):
             )
             return
 
+        print(f"Checking verification for user {member.id}")
         try:
             andrewid = await self.oauth_server.oauth_manager.get_andrewid(member.id)
+            print(f"get_andrewid returned: {andrewid} (type: {type(andrewid)})")
+
             if andrewid:
+                print(f"User {member.id} already verified as {andrewid}")
                 await interaction.response.send_message(
                     content=f"oops! you're already verified as `{andrewid}`.",
                     ephemeral=True,
                 )
                 return
-        except Exception:
+        except Exception as e:
+            print(f"Error checking Andrew ID for user {member.id}: {e}")
             pass
 
         verification_url = self.oauth_server.get_verification_url(interaction.user.id)
