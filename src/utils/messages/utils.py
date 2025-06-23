@@ -110,7 +110,6 @@ async def index_messages(messages: list[discord.Message]):
         for data in message_data:
             try:
                 if not Message.exists(message_id=data.message_id):
-                    print("Creating new Message entry for", data.message_id)
                     db_msg = Message(
                         message_id=data.message_id,
                         author_id=data.author_id,
@@ -122,12 +121,8 @@ async def index_messages(messages: list[discord.Message]):
                         reply_to=data.reply_to,
                     )
 
-                    print("Created Message entry:", db_msg)
-
                     for uid in data.mentioned_ids:
                         Mention(mentioned_user_id=uid, message=db_msg)
-
-                    print("Added mentions for message", data.message_id)
 
                     for reaction_data in data.reactions:
                         for user_id in reaction_data.users:
@@ -144,8 +139,6 @@ async def index_messages(messages: list[discord.Message]):
                                     emoji_unicode=reaction_data.emoji_unicode,
                                     timestamp=data.timestamp,
                                 )
-
-                    print(f"Added reactions for message {data.message_id}")
             except Exception as e:
                 import traceback
 
