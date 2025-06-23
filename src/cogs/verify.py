@@ -41,11 +41,11 @@ class Verify(commands.Cog):
         except Exception as e:
             print(f"Failed to clean up OAuth: {e}")
 
-    @commands.hybrid_command(
+    @commands.command(
         name="setup_verification",
         description="Set up the persistent verification message.",
+        hidden=True,
     )
-    @app_commands.guilds(Meta.SERVER.value)
     @commands.is_owner()
     async def setup_verification(self, ctx: commands.Context[commands.Bot]):
         await ctx.send(view=self.verification_layout)
