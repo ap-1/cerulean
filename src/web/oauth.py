@@ -16,7 +16,7 @@ class OAuthManager(RedisManager):
     async def create_verification_session(self, user_id: int) -> str:
         # create a new verification session and return a state token
         state = secrets.token_urlsafe(32)
-        await self.set(f"session:{state}", str(user_id), ex=600)  # 10 minute expiry
+        await self.set(f"session:{state}", str(user_id), ex=300)  # 5 minute expiry
 
         return state
 
