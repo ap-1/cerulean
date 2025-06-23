@@ -47,7 +47,11 @@ class VerifyButton(discord.ui.Button[discord.ui.LayoutView]):
         )
         view.add_item(oauth_button)
 
-        await interaction.response.send_message(view=view, ephemeral=True)
+        await interaction.response.send_message(
+            "-# This is your personal verification URL. Don't share it!",
+            view=view,
+            ephemeral=True,
+        )
 
 
 class VerifyContainer(discord.ui.Container[discord.ui.LayoutView]):
