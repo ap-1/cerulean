@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal, cast
@@ -43,6 +44,28 @@ async def index_messages(messages: list[discord.Message]):
     # run async operations first
     message_data: list[MessageData] = []
 
+    async def fetch_reaction_data(reaction: discord.Reaction) -> ReactionData | None:
+        emoji_id = None
+        emoji_unicode = None
+
+        if isinstance(reaction.emoji, str):
+            # unicode emoji
+            emoji_unicode = cast(str, reaction.emoji)  # pyright: ignore[reportUnnecessaryCast]
+        else:
+            # custom emoji
+            emoji = cast(discord.PartialEmoji | discord.Emoji, reaction.emoji)  # pyright: ignore[reportUnnecessaryCast]
+            emoji_id = emoji.id
+
+            if emoji_id is None:
+                return None  # deleted custom emoji
+
+        user_ids = [user.id async for user in reaction.users()]
+        return ReactionData(
+            emoji_id=emoji_id,
+            emoji_unicode=emoji_unicode,
+            users=user_ids,
+        )
+
     for message in messages:
         # thread + channel logic
         if isinstance(message.channel, discord.Thread):
@@ -59,36 +82,11 @@ async def index_messages(messages: list[discord.Message]):
         )
         mentioned_ids = [user.id for user in message.mentions]
 
-        # collect reaction data
-        reactions_data: list[ReactionData] = []
-        for reaction in message.reactions:
-            emoji_id = None
-            emoji_unicode = None
-
-            if type(reaction.emoji) is str:
-                # unicode emoji
-                emoji_unicode = cast(str, reaction.emoji)  # pyright: ignore[reportUnnecessaryCast]
-            else:
-                # custom emoji
-                emoji = cast(discord.PartialEmoji | discord.Emoji, reaction.emoji)
-                emoji_id = emoji.id
-
-                if emoji_id is None:
-                    # deleted custom emoji
-                    continue
-
-            # get all users who reacted with this emoji
-            reacted_users: list[int] = []
-            async for user in reaction.users():
-                reacted_users.append(user.id)
-
-            reactions_data.append(
-                ReactionData(
-                    emoji_id=emoji_id,
-                    emoji_unicode=emoji_unicode,
-                    users=reacted_users,
-                )
-            )
+        # collect reaction data asynchronously
+        reactions_raw = await asyncio.gather(
+            *map(fetch_reaction_data, message.reactions)
+        )
+        reactions_data = [r for r in reactions_raw if r is not None]
 
         message_data.append(
             MessageData(
