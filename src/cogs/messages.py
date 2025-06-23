@@ -1,3 +1,4 @@
+import asyncio
 import time
 
 import discord
@@ -5,14 +6,19 @@ from discord import app_commands
 from discord.ext import commands
 
 from utils.ids import Meta, Role
-from utils.messages.utils import index_messages, index_reaction, render_progress_bar
+from utils.messages.utils import (
+    index_edited_message,
+    index_messages,
+    index_reaction,
+    render_progress_bar,
+)
 
 
 class Messages(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot: commands.Bot = bot
 
-    @commands.hybrid_command(name="index", description="Index a channel's messages")
+    @app_commands.command(name="index", description="Index a channel's messages")
     @app_commands.describe(
         channel="Channel to index",
         count="Approximate number of messages for progress bar",
@@ -22,12 +28,20 @@ class Messages(commands.Cog):
     @commands.has_any_role(Role.ADMIN.value)
     async def index(
         self,
-        ctx: commands.Context[commands.Bot],
+        interaction: discord.Interaction,
         channel: discord.TextChannel,
         count: int,
         limit: int | None = None,
     ):
-        await ctx.defer()
+        asyncio.create_task(self._run_index(interaction, channel, count, limit))
+
+    async def _run_index(
+        self,
+        interaction: discord.Interaction,
+        channel: discord.TextChannel,
+        count: int,
+        limit: int | None,
+    ):
         start_time = time.time()
         processed = 0
         count = min(count, limit) if limit is not None else count
@@ -41,7 +55,9 @@ class Messages(commands.Cog):
             color=discord.Color.orange(),
         )
         progress_embed.set_footer(text="Elapsed: 0s")
-        progress_message = await ctx.reply(embed=progress_embed)
+        progress_message = await interaction.followup.send(
+            embed=progress_embed, wait=True
+        )
 
         async def process_batch():
             await index_messages(buffer)
@@ -70,15 +86,14 @@ class Messages(commands.Cog):
         progress_embed.set_footer(
             text=f"Total time: {int(time.time() - start_time)} seconds"
         )
-
         await progress_message.edit(embed=progress_embed)
 
     @index.error
     async def autoresponse_error(
-        self, ctx: commands.Context[commands.Bot], error: commands.CommandError
+        self, interaction: discord.Interaction, error: app_commands.AppCommandError
     ) -> None:
         if isinstance(error, commands.MissingAnyRole):
-            await ctx.reply(
+            await interaction.response.send_message(
                 "oops! you don't have permission to index channels.",
                 ephemeral=True,
             )
