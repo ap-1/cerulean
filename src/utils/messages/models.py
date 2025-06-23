@@ -44,7 +44,7 @@ class Message(db.Entity):
     thread_id = Optional(int, size=64)
     content = Required(str)
     timestamp = Required(datetime)
-    reply_to = Optional(int)
+    reply_to = Optional(int, size=64)
     mentions = Set("Mention")  # pyright: ignore[reportUnknownVariableType]
     reactions = Set("Reaction")  # pyright: ignore[reportUnknownVariableType]
 
