@@ -19,7 +19,7 @@ class Verify(commands.Cog):
             bot, int(os.getenv("PORT", default=8080))
         )
 
-        self.verification_layout: VerifyLayoutView = VerifyLayoutView(self.oauth_server)
+        self.verification_layout: VerifyLayoutView | None = None
         self.bot.loop.create_task(self._init_oauth())
 
     async def _init_oauth(self) -> None:
@@ -27,6 +27,7 @@ class Verify(commands.Cog):
             await self.oauth_manager.connect()
             self.oauth_server.start_server()
 
+            self.verification_layout = VerifyLayoutView(self.oauth_server)
             self.bot.add_view(self.verification_layout)
 
             print("Started OAuth server")
@@ -49,6 +50,12 @@ class Verify(commands.Cog):
     @app_commands.guilds(Meta.SERVER.value)
     @commands.is_owner()
     async def setup_verification(self, ctx: commands.Context[commands.Bot]):
+        if not self.verification_layout:
+            await ctx.reply(
+                "oops! verification layout is not initialized.", ephemeral=True
+            )
+            return
+
         await ctx.send(view=self.verification_layout)
 
     @app_commands.command(
