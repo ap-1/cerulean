@@ -58,19 +58,6 @@ class Verify(commands.Cog):
 
         await ctx.send(view=self.verification_layout)
 
-    @commands.hybrid_command(
-        name="setup_verification_debug",
-        description="Debug setup verification",
-    )
-    @app_commands.guilds(Meta.SERVER.value)
-    @commands.is_owner()
-    async def setup_verification_debug(self, ctx: commands.Context[commands.Bot]):
-        await ctx.defer()
-        fresh_layout = VerifyLayoutView(self.oauth_server)
-        print("Fresh layout created")
-        await ctx.send(view=fresh_layout)
-        print("Sent verification layout in debug mode")
-
     @app_commands.command(
         name="verify", description="Verify yourself with your Andrew ID."
     )

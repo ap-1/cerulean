@@ -85,7 +85,6 @@ class VerifyContainer(discord.ui.Container[discord.ui.LayoutView]):
         action_row.add_item(VerifyButton(oauth_server))
         self.add_item(action_row)
 
-        self.add_item(VerifyButton(oauth_server))
         self.add_item(
             discord.ui.TextDisplay(
                 "-# Worried about privacy? People will not be able to look up your Andrew ID with your Discord or vice versa. All code is available to audit [here](https://github.com/ap-1/cerulean).",
