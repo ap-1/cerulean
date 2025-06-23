@@ -50,43 +50,6 @@ class Verify(commands.Cog):
     async def setup_verification(self, ctx: commands.Context[commands.Bot]):
         await ctx.send(view=self.verification_layout)
 
-    @app_commands.command(
-        name="verify", description="Verify yourself with your Andrew ID."
-    )
-    @app_commands.guilds(Meta.SERVER.value)
-    @app_commands.guild_only()
-    async def verify(self, interaction: discord.Interaction):
-        guild = cast(discord.Guild, self.bot.get_guild(Meta.SERVER.value))
-        member = guild.get_member(interaction.user.id)
-        if not member:
-            await interaction.response.send_message(
-                content="oops! please join the server and try again.",
-                ephemeral=True,
-            )
-            return
-
-        try:
-            andrewid = await self.oauth_manager.get_andrewid(member.id)
-            if andrewid:
-                await interaction.response.send_message(
-                    content=f"oops! you're already verified as `{andrewid}`.",
-                    ephemeral=True,
-                )
-                return
-        except Exception:
-            pass
-
-        view = discord.ui.View(timeout=300)
-        verification_url = self.oauth_server.get_verification_url(interaction.user.id)
-        oauth_button: discord.ui.Button[discord.ui.View] = discord.ui.Button(
-            label="Verify with Andrew ID",
-            url=verification_url,
-            style=discord.ButtonStyle.link,
-        )
-        view.add_item(oauth_button)
-
-        await interaction.response.send_message(view=view, ephemeral=True)
-
     @commands.hybrid_command(
         name="unverify", description="Remove verification from a user."
     )
