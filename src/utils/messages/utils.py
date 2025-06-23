@@ -73,6 +73,10 @@ async def index_messages(messages: list[discord.Message]):
                 emoji = cast(discord.PartialEmoji | discord.Emoji, reaction.emoji)
                 emoji_id = emoji.id
 
+                if emoji_id is None:
+                    # deleted custom emoji
+                    continue
+
             # get all users who reacted with this emoji
             reacted_users: list[int] = []
             async for user in reaction.users():
