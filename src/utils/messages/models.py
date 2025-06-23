@@ -42,7 +42,7 @@ class Message(db.Entity):
     is_bot = Required(bool)
     channel_id = Required(int, size=64)
     thread_id = Optional(int, size=64)
-    content = Required(str)
+    content = Optional(str)
     timestamp = Required(datetime)
     reply_to = Optional(int, size=64)
     mentions = Set("Mention")  # pyright: ignore[reportUnknownVariableType]
