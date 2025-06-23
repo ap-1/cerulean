@@ -18,7 +18,7 @@ class Messages(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot: commands.Bot = bot
 
-    @app_commands.command(name="index", description="Index a channel's messages")
+    @commands.hybrid_command(name="index", description="Index a channel's messages")
     @app_commands.describe(
         channel="Channel to index",
         count="Approximate number of messages for progress bar",
@@ -28,17 +28,16 @@ class Messages(commands.Cog):
     @commands.has_any_role(Role.ADMIN.value)
     async def index(
         self,
-        interaction: discord.Interaction,
+        ctx: commands.Context[commands.Bot],
         channel: discord.TextChannel,
         count: int,
         limit: int | None = None,
     ):
-        await interaction.response.defer(thinking=True)
-        asyncio.create_task(self._run_index(interaction, channel, count, limit))
+        await ctx.send(f"started indexing {channel.mention}", ephemeral=True)
+        asyncio.create_task(self._run_index(channel, count, limit))
 
     async def _run_index(
         self,
-        interaction: discord.Interaction,
         channel: discord.TextChannel,
         count: int,
         limit: int | None,
@@ -56,9 +55,7 @@ class Messages(commands.Cog):
             color=discord.Color.orange(),
         )
         progress_embed.set_footer(text="Elapsed: 0s")
-        progress_message = await interaction.followup.send(
-            embed=progress_embed, wait=True
-        )
+        progress_message = await channel.send(embed=progress_embed)
 
         async def process_batch():
             await index_messages(buffer)
@@ -91,10 +88,10 @@ class Messages(commands.Cog):
 
     @index.error
     async def autoresponse_error(
-        self, interaction: discord.Interaction, error: app_commands.AppCommandError
+        self, ctx: commands.Context[commands.Bot], error: commands.CommandError
     ) -> None:
         if isinstance(error, commands.MissingAnyRole):
-            await interaction.response.send_message(
+            await ctx.send(
                 "oops! you don't have permission to index channels.",
                 ephemeral=True,
             )
