@@ -8,6 +8,7 @@ from pony.orm import (
     PrimaryKey,
     Required,
     Set,
+    composite_key,
     sql_debug,
 )
 
@@ -45,12 +46,27 @@ class Message(db.Entity):
     timestamp = Required(datetime)
     reply_to = Optional(int)
     mentions = Set("Mention")  # pyright: ignore[reportUnknownVariableType]
+    reactions = Set("Reaction")  # pyright: ignore[reportUnknownVariableType]
+
+
+@final
+class Reaction(db.Entity):
+    message = Required(Message)
+    user_id = Required(int, size=64)
+
+    emoji_id = Optional(int, size=64)  # null for Unicode emojis
+    emoji_unicode = Optional(str)  # null for custom emojis
+
+    timestamp = Required(datetime, default=datetime.now)
+
+    # ensure a user can only react once per emoji per message
+    composite_key(message, user_id, emoji_id, emoji_unicode)
 
 
 @final
 class Mention(db.Entity):
-    mentioned_user_id = Required(int)
     message = Required(Message)
+    mentioned_user_id = Required(int)
 
 
 db.generate_mapping(create_tables=True)
