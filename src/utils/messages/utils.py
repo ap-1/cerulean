@@ -40,75 +40,75 @@ class MessageData:
 
 
 async def index_messages(messages: list[discord.Message]):
-    try:
-        # run async operations first
-        message_data: list[MessageData] = []
+    # run async operations first
+    message_data: list[MessageData] = []
 
-        for message in messages:
-            # thread + channel logic
-            if isinstance(message.channel, discord.Thread):
-                thread_id = message.channel.id
-                channel_id = message.channel.parent_id
+    for message in messages:
+        # thread + channel logic
+        if isinstance(message.channel, discord.Thread):
+            thread_id = message.channel.id
+            channel_id = message.channel.parent_id
+        else:
+            thread_id = None
+            channel_id = message.channel.id
+
+        reply_id = (
+            message.reference.message_id  # type: ignore[possibly-unbound-attribute]
+            if message.reference
+            else None
+        )
+        mentioned_ids = [user.id for user in message.mentions]
+
+        # collect reaction data
+        reactions_data: list[ReactionData] = []
+        for reaction in message.reactions:
+            emoji_id = None
+            emoji_unicode = None
+
+            if type(reaction.emoji) is str:
+                # unicode emoji
+                emoji_unicode = cast(str, reaction.emoji)  # pyright: ignore[reportUnnecessaryCast]
             else:
-                thread_id = None
-                channel_id = message.channel.id
+                # custom emoji
+                emoji = cast(discord.PartialEmoji | discord.Emoji, reaction.emoji)
+                emoji_id = emoji.id
 
-            reply_id = (
-                message.reference.message_id  # type: ignore[possibly-unbound-attribute]
-                if message.reference
-                else None
-            )
-            mentioned_ids = [user.id for user in message.mentions]
+                if emoji_id is None:
+                    # deleted custom emoji
+                    continue
 
-            # collect reaction data
-            reactions_data: list[ReactionData] = []
-            for reaction in message.reactions:
-                emoji_id = None
-                emoji_unicode = None
+            # get all users who reacted with this emoji
+            reacted_users: list[int] = []
+            async for user in reaction.users():
+                reacted_users.append(user.id)
 
-                if type(reaction.emoji) is str:
-                    # unicode emoji
-                    emoji_unicode = cast(str, reaction.emoji)  # pyright: ignore[reportUnnecessaryCast]
-                else:
-                    # custom emoji
-                    emoji = cast(discord.PartialEmoji | discord.Emoji, reaction.emoji)
-                    emoji_id = emoji.id
-
-                    if emoji_id is None:
-                        # deleted custom emoji
-                        continue
-
-                # get all users who reacted with this emoji
-                reacted_users: list[int] = []
-                async for user in reaction.users():
-                    reacted_users.append(user.id)
-
-                reactions_data.append(
-                    ReactionData(
-                        emoji_id=emoji_id,
-                        emoji_unicode=emoji_unicode,
-                        users=reacted_users,
-                    )
-                )
-
-            message_data.append(
-                MessageData(
-                    message_id=message.id,
-                    author_id=message.author.id,
-                    is_bot=message.author.bot,
-                    channel_id=channel_id,
-                    thread_id=thread_id,
-                    content=message.content,
-                    timestamp=message.created_at,
-                    reply_to=reply_id,
-                    mentioned_ids=mentioned_ids,
-                    reactions=reactions_data,
+            reactions_data.append(
+                ReactionData(
+                    emoji_id=emoji_id,
+                    emoji_unicode=emoji_unicode,
+                    users=reacted_users,
                 )
             )
 
-        # do all database operations synchronously
-        with db_session:
-            for data in message_data:
+        message_data.append(
+            MessageData(
+                message_id=message.id,
+                author_id=message.author.id,
+                is_bot=message.author.bot,
+                channel_id=channel_id,
+                thread_id=thread_id,
+                content=message.content,
+                timestamp=message.created_at,
+                reply_to=reply_id,
+                mentioned_ids=mentioned_ids,
+                reactions=reactions_data,
+            )
+        )
+
+    # do all database operations synchronously
+    with db_session:
+        for data in message_data:
+            try:
                 if not Message.exists(message_id=data.message_id):
                     print("Creating new Message entry for", data.message_id)
                     db_msg = Message(
@@ -146,9 +146,8 @@ async def index_messages(messages: list[discord.Message]):
                                 )
 
                     print(f"Added reactions for message {data.message_id}")
-    except Exception as e:
-        import traceback
+            except Exception as e:
+                import traceback
 
-        print(f"Error while indexing messages: {e}")
-        traceback.print_exc()
-        raise
+                print(f"Error while indexing messages: {e}")
+                traceback.print_exc()
