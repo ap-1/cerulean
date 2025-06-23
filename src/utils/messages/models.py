@@ -66,7 +66,7 @@ class Reaction(db.Entity):
 @final
 class Mention(db.Entity):
     message = Required(Message)
-    mentioned_user_id = Required(int)
+    mentioned_user_id = Required(int, size=64)
 
 
 db.generate_mapping(create_tables=True)
