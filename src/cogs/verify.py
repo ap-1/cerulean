@@ -16,7 +16,7 @@ class Verify(commands.Cog):
         self.bot: commands.Bot = bot
         self.oauth_manager: OAuthManager = OAuthManager()
         self.oauth_server: OAuthServer = OAuthServer(
-            bot, int(os.getenv("PORT", default=8080))
+            bot, self.oauth_manager, int(os.getenv("PORT", default=8080))
         )
 
         self.verification_layout: VerifyLayoutView = VerifyLayoutView(self.oauth_server)
