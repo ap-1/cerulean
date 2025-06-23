@@ -5,7 +5,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from utils.ids import Meta, Role
-from utils.messages.utils import index_messages, render_progress_bar
+from utils.messages.utils import index_messages, index_reaction, render_progress_bar
 
 
 class Messages(commands.Cog):
@@ -87,6 +87,24 @@ class Messages(commands.Cog):
     async def on_message(self, message: discord.Message):
         await index_messages([message])
         await self.bot.process_commands(message)
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+        await index_reaction(
+            message_id=payload.message_id,
+            user_id=payload.user_id,
+            emoji=payload.emoji,
+            action="add",
+        )
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
+        await index_reaction(
+            message_id=payload.message_id,
+            user_id=payload.user_id,
+            emoji=payload.emoji,
+            action="remove",
+        )
 
 
 async def setup(bot: commands.Bot) -> None:

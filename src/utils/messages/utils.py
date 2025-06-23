@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import cast
+from typing import Literal, cast
 
 import discord
 from pony.orm import db_session
@@ -137,6 +137,7 @@ async def index_messages(messages: list[discord.Message]):
                                     user_id=user_id,
                                     emoji_id=reaction_data.emoji_id,
                                     emoji_unicode=reaction_data.emoji_unicode,
+                                    # use the message timestamp for old reactions
                                     timestamp=data.timestamp,
                                 )
             except Exception as e:
@@ -144,3 +145,43 @@ async def index_messages(messages: list[discord.Message]):
 
                 print(f"Error while indexing messages: {e}")
                 traceback.print_exc()
+
+
+async def index_reaction(
+    message_id: int,
+    user_id: int,
+    emoji: discord.PartialEmoji,
+    action: Literal["add", "remove"],
+):
+    emoji_id = emoji.id
+    emoji_unicode = emoji.name if emoji_id is None else None
+    timestamp = discord.utils.utcnow()
+
+    with db_session:
+        msg = Message.get(message_id=message_id)
+        if not msg:
+            return  # message is not indexed, ignore reaction
+
+        if action == "add":
+            if not Reaction.exists(
+                message=msg,
+                user_id=user_id,
+                emoji_id=emoji_id,
+                emoji_unicode=emoji_unicode,
+            ):
+                Reaction(
+                    message=msg,
+                    user_id=user_id,
+                    emoji_id=emoji_id,
+                    emoji_unicode=emoji_unicode,
+                    timestamp=timestamp,
+                )
+        elif action == "remove":
+            r = Reaction.get(
+                message=msg,
+                user_id=user_id,
+                emoji_id=emoji_id,
+                emoji_unicode=emoji_unicode,
+            )
+            if r:
+                r.delete()
