@@ -15,7 +15,7 @@ if token is None:
 
 
 intents = discord.Intents.all()
-bot = commands.Bot(command_prefix="c!", intents=intents)
+bot = commands.Bot(command_prefix=commands.when_mentioned_or("c!"), intents=intents)
 
 
 @bot.event
