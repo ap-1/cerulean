@@ -6,7 +6,7 @@ from typing import Literal, cast
 import discord
 from pony.orm import db_session
 
-from utils.messages.models import Mention, Message, Reaction
+from utils.index.models import Mention, Message, Reaction
 
 
 def render_progress_bar(current: int, total: int, bar_length: int = 20) -> str:

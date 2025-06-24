@@ -6,7 +6,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from utils.ids import Meta, Role
-from utils.messages.utils import (
+from utils.index.utils import (
     index_edited_message,
     index_messages,
     index_reaction,
