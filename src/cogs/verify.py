@@ -176,6 +176,16 @@ class Verify(commands.Cog):
                 "oops! you don't have permission to use this command.", ephemeral=True
             )
 
+    @commands.Cog.listener()
+    async def on_member_join(self, member: discord.Member):
+        if member.guild.id != Meta.SERVER.value:
+            return
+
+        # if user is already verified, give them roles
+        andrewid = await self.oauth_manager.get_andrewid(member.id)
+        if andrewid:
+            await self.oauth_manager.complete_verification(self.bot, member.id, andrewid)
+
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Verify(bot))
