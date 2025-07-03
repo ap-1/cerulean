@@ -50,6 +50,46 @@ class General(commands.Cog):
         await ctx.message.delete()
         await ctx.send(content=message)
 
+    @commands.hybrid_command(
+        name="emulate", description="Send a message as another user using a webhook"
+    )
+    @app_commands.describe(
+        user="The user to emulate", message="A message to send as that user"
+    )
+    @app_commands.guilds(Meta.SERVER.value)
+    @commands.is_owner()
+    async def emulate(
+        self, ctx: commands.Context[commands.Bot], user: discord.Member, *, message: str
+    ):
+        if not isinstance(ctx.channel, discord.TextChannel):
+            await ctx.reply(
+                "oops! this command can only be used in text channels.", ephemeral=True
+            )
+            return
+
+        try:
+            # get or create webhook for the channel
+            webhooks = await ctx.channel.webhooks()
+            webhook = None
+
+            for wh in webhooks:
+                if wh.user == ctx.bot.user:
+                    webhook = wh
+                    break
+
+            if webhook is None:
+                webhook = await ctx.channel.create_webhook(name="Cerulean Emulation")
+
+            # send the message as the user
+            await webhook.send(
+                content=message,
+                username=user.display_name,
+                avatar_url=user.display_avatar.url,
+            )
+
+        except Exception as e:
+            await ctx.reply(f"Error emulating user: {str(e)}", ephemeral=True)
+
     async def _eval_helper(self, ctx: commands.Context[commands.Bot], code: str):
         from utils.redis import RedisManager
 
