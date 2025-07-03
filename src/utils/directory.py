@@ -62,6 +62,7 @@ class DirectoryParser:
         "Psychology": [Role.DIETRICH],
         "Public Management:Sch of Pub Pol & Mgt": [Role.HEINZ],
         "Public Policy & Mgt:Sch of Pub Pol & Mgt": [Role.HEINZ],
+        "Health Care Policy:Sch of Pub Pol & Mgt": [Role.HEINZ],
         "Qatar Biological Sciences": [Role.MCS, Role.QATAR],
         "Qatar Business Administration": [Role.TEPPER, Role.QATAR],
         "Qatar Computer Science": [Role.SCS, Role.QATAR],
