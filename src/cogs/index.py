@@ -99,7 +99,6 @@ class Messages(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         await index_messages([message])
-        await self.bot.process_commands(message)
 
     @commands.Cog.listener()
     async def on_message_edit(self, _: discord.Message, after: discord.Message):
