@@ -5,7 +5,7 @@ from discord import app_commands
 from discord.ext import commands
 from discord.member import Member
 
-from utils.ids import PEAS, SNOWPEA_WHITELIST, Meta, Role
+from utils.ids import PEAS, Meta, Role
 from utils.snowpea.database import SnowpeaDatabase
 
 
@@ -161,11 +161,7 @@ class Snowpea(commands.Cog):
         if not payload.guild_id or payload.guild_id != Meta.SERVER.value:
             return
 
-        # ignore if reaction not made by an admin/mod
         member = payload.member
-        if not member or not any(role.id in SNOWPEA_WHITELIST for role in member.roles):
-            return
-
         guild = cast(discord.Guild, self.bot.get_guild(payload.guild_id))
         channel = cast(discord.TextChannel, guild.get_channel(payload.channel_id))
         message = await channel.fetch_message(payload.message_id)
