@@ -40,7 +40,7 @@ class OAuthServer:
         self.oauth_manager: OAuthManager = oauth_manager
 
         self.app: Flask = Flask(__name__)
-        self.app.wsgi_app = ProxyFix(self.app.wsgi_app, x_proto=1, x_host=1) # ty: ignore[invalid-assignment]
+        self.app.wsgi_app = ProxyFix(self.app.wsgi_app, x_proto=1, x_host=1, x_port=1) # ty: ignore[invalid-assignment]
         self.app.secret_key = os.getenv("FLASK_SECRET_KEY", secrets.token_urlsafe(32))
 
         self.port: int = port
