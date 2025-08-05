@@ -57,7 +57,7 @@ class General(commands.Cog):
         user="The user to emulate", message="A message to send as that user"
     )
     @app_commands.guilds(Meta.SERVER.value)
-    @commands.is_owner()
+    @eval_whitelist
     async def emulate(
         self, ctx: commands.Context[commands.Bot], user: discord.Member, *, message: str
     ):
